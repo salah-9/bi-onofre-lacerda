@@ -142,9 +142,9 @@ def com_carregar_dados():
             leads[col] = leads[col].apply(parse_dt)
 
     leads = leads[leads["created_at"].notna()].copy()
-    leads["trimestre"] = leads["created_at"].apply(trimestre)
-    leads["mes_key"]   = leads["created_at"].apply(mes_ano_key)
-    leads["mes_label"] = leads["created_at"].apply(mes_ano_str)
+    leads["trimestre"] = leads["created_at"].apply(trimestre_de_dt)
+    leads["mes_key"]   = leads["created_at"].apply(mes_key)
+    leads["mes_label"] = leads["created_at"].apply(mes_label)
 
     leads["sla_horas"] = leads.apply(
         lambda r: (r["first_contact_at"] - r["created_at"]).total_seconds() / 3600
@@ -202,8 +202,8 @@ def com_carregar_dados():
         ganhas["won_at"] = ganhas["won_at"].apply(parse_dt)
 
     ganhas = ganhas[ganhas["won_at"].notna()].copy()
-    ganhas["trimestre"] = ganhas["won_at"].apply(trimestre)
-    ganhas["mes_key"]   = ganhas["won_at"].apply(mes_ano_key)
+    ganhas["trimestre"] = ganhas["won_at"].apply(trimestre_de_dt)
+    ganhas["mes_key"]   = ganhas["won_at"].apply(mes_key)
     ganhas = ganhas[ganhas["contract_type"].str.lower().str.strip() != "locação"]
 
     return leads, ganhas
@@ -1116,9 +1116,9 @@ def ins_carregar_dados():
             df[col] = df[col].apply(parse_dt)
 
     df = df[df["created_at"].notna()].copy()
-    df["trimestre"]  = df["created_at"].apply(trimestre)
-    df["mes_key"]    = df["created_at"].apply(mes_ano_key)
-    df["mes_label"]  = df["created_at"].apply(mes_ano_label)
+    df["trimestre"]  = df["created_at"].apply(trimestre_de_dt)
+    df["mes_key"]    = df["created_at"].apply(mes_key)
+    df["mes_label"]  = df["created_at"].apply(mes_label)
     df["dia"]        = df["created_at"].dt.date
 
     df["sla_horas"] = df.apply(
