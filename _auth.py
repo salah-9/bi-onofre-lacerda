@@ -42,7 +42,8 @@ label {{ color: #ccc !important; font-size: 0.85rem !important; }}
     border-radius: 6px !important;
     font-size: 1rem !important;
 }}
-header[data-testid="stHeader"] {{ background-color: {NAVY} !important; }}
+header[data-testid="stHeader"] {{ display: none !important; }}
+[data-testid="stToolbar"] {{ display: none !important; }}
 section[data-testid="stSidebar"] {{ display: none !important; }}
 </style>
 """
