@@ -15,43 +15,19 @@ section[data-testid="stSidebar"] {{
     background-color: {NAVY} !important;
     border-right: 3px solid {GOLD};
 }}
-section[data-testid="stSidebar"] * {{
-    color: #ffffff !important;
-}}
-section[data-testid="stSidebar"] hr {{
-    border-color: {GOLD}55 !important;
-}}
-section[data-testid="stSidebar"] .stToggle label {{
-    color: #ffffff !important;
-}}
+section[data-testid="stSidebar"] * {{ color: #ffffff !important; }}
+section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
 
 /* ── Nav links ── */
-[data-testid="stSidebarNavLink"] {{
-    color: #ffffff !important;
-    border-radius: 6px;
-}}
+[data-testid="stSidebarNavLink"] {{ color: #ffffff !important; border-radius: 6px; }}
 [data-testid="stSidebarNavLink"]:hover,
 [data-testid="stSidebarNavLink"][aria-selected="true"] {{
     background-color: {GOLD}33 !important;
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Header e toolbar ── */
-header[data-testid="stHeader"] {{
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
+/* ── Esconde só os botões Share/Star/Edit/GitHub ── */
 [data-testid="stToolbar"] {{ display: none !important; }}
-
-/* ── Sidebar sempre visível, sem botão de fechar ── */
-section[data-testid="stSidebar"] > div:first-child {{
-    padding-top: 1rem !important;
-}}
-button[data-testid="baseButton-headerNoPadding"],
-[data-testid="stSidebarCollapsedControl"] {{
-    display: none !important;
-}}
 
 /* ── Headers ── */
 h1, h2, h3 {{ color: {NAVY} !important; }}
@@ -81,10 +57,7 @@ hr {{ border-color: {GOLD}44 !important; }}
 
 /* ── Mobile responsive ── */
 @media (max-width: 768px) {{
-    .main .block-container {{
-        padding: 0.75rem 0.75rem 2rem !important;
-        max-width: 100% !important;
-    }}
+    .main .block-container {{ padding: 0.75rem 0.75rem 2rem !important; max-width: 100% !important; }}
     div[data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; gap: 0.5rem !important; }}
     div[data-testid="column"] {{ min-width: calc(50% - 0.5rem) !important; flex: 1 1 calc(50% - 0.5rem) !important; }}
     [data-testid="stMetricValue"] {{ font-size: 1.15rem !important; }}
@@ -121,22 +94,8 @@ section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Header e toolbar ── */
-header[data-testid="stHeader"] {{
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
+/* ── Esconde só os botões Share/Star/Edit/GitHub ── */
 [data-testid="stToolbar"] {{ display: none !important; }}
-
-/* ── Sidebar sempre visível, sem botão de fechar ── */
-section[data-testid="stSidebar"] > div:first-child {{
-    padding-top: 1rem !important;
-}}
-button[data-testid="baseButton-headerNoPadding"],
-[data-testid="stSidebarCollapsedControl"] {{
-    display: none !important;
-}}
 
 /* ── Headers ── */
 h1, h2, h3 {{ color: {GOLD} !important; }}
@@ -155,29 +114,17 @@ p, span, label, .stMarkdown {{ color: #dde3ec !important; }}
 }}
 [data-testid="stMetricLabel"] {{ color: #aab0ba !important; font-size: 0.7rem !important; }}
 
-/* ── Cards / containers ── */
+/* ── Cards ── */
 [data-testid="stVerticalBlockBorderWrapper"] > div {{
     background-color: #162032 !important;
     border-color: #2a3a50 !important;
-}}
-
-/* ── Selectbox / multiselect ── */
-[data-testid="stSelectbox"] > div,
-[data-testid="stMultiSelect"] > div {{
-    background-color: #162032 !important;
-    color: #e8e8e8 !important;
 }}
 
 /* ── Divider ── */
 hr {{ border-color: {GOLD}44 !important; }}
 
 /* ── Buttons ── */
-.stButton > button {{
-    background-color: {GOLD};
-    color: {NAVY};
-    font-weight: 600;
-    border: none;
-}}
+.stButton > button {{ background-color: {GOLD}; color: {NAVY}; font-weight: 600; border: none; }}
 
 /* ── Mobile responsive ── */
 @media (max-width: 768px) {{
@@ -196,12 +143,10 @@ hr {{ border-color: {GOLD}44 !important; }}
 
 
 def setup() -> bool:
-    """Aplica branding Onofre. Retorna True se tema escuro ativo."""
-    # Logo no sidebar
     if LOGO.exists():
         st.sidebar.image(str(LOGO), width=180)
     else:
-        st.sidebar.markdown(f"### Onofre Lacerda")
+        st.sidebar.markdown("### Onofre Lacerda")
 
     st.sidebar.divider()
 
