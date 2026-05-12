@@ -12,6 +12,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import _brand
+import _auth
 import _gsheets
 
 ROOT = Path(__file__).parent.parent
@@ -191,6 +192,7 @@ def agregar_corretores(df: pd.DataFrame, tipo: str, valor: str, prime_herdado_se
 
 # ── Interface ────────────────────────────────────────────────────────────────
 _brand.setup()
+_auth.require_login()
 
 st.title("Dashboard Financeiro")
 st.caption("Comissões · Status Base / Prime · Valor a pagar")

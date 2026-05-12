@@ -2,6 +2,7 @@
 
 import streamlit as st
 import _brand
+import _auth
 
 st.set_page_config(
     page_title="BI Onofre Lacerda",
@@ -10,6 +11,7 @@ st.set_page_config(
 )
 
 _brand.setup()
+_auth.require_login()
 
 st.title("BI Onofre Lacerda")
 st.caption("Selecione um dashboard no menu lateral")

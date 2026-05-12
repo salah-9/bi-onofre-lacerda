@@ -12,6 +12,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import _brand
+import _auth
 import _gsheets
 
 ROOT = Path(__file__).parent.parent
@@ -181,6 +182,7 @@ def carregar_dados():
 
 
 _brand.setup()
+_auth.require_login()
 
 # ── Interface ────────────────────────────────────────────────────────────────
 st.title("Dashboard Comercial")
