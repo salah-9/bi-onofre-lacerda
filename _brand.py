@@ -36,17 +36,11 @@ section[data-testid="stSidebar"] .stToggle label {{
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Top toolbar ── */
+/* ── Top toolbar — esconde botões mas mantém toggle do sidebar ── */
+[data-testid="stToolbar"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{
     background-color: transparent !important;
-    border: none !important;
-    height: 0 !important;
-    min-height: 0 !important;
-}}
-[data-testid="stToolbar"] {{ display: none !important; }}
-[data-testid="collapsedControl"] {{
-    display: flex !important;
-    top: 0.5rem !important;
+    border-bottom: none !important;
 }}
 
 /* ── Headers ── */
@@ -117,17 +111,11 @@ section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Top toolbar ── */
+/* ── Top toolbar — esconde botões mas mantém toggle do sidebar ── */
+[data-testid="stToolbar"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{
     background-color: transparent !important;
-    border: none !important;
-    height: 0 !important;
-    min-height: 0 !important;
-}}
-[data-testid="stToolbar"] {{ display: none !important; }}
-[data-testid="collapsedControl"] {{
-    display: flex !important;
-    top: 0.5rem !important;
+    border-bottom: none !important;
 }}
 
 /* ── Headers ── */
