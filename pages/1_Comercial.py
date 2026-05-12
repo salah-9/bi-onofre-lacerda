@@ -84,12 +84,7 @@ def mes_ano_key(dt: datetime) -> str:
 
 @st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
 def carregar_dados():
-    import gspread
-    gc = gspread.oauth(
-        credentials_filename=str(CLIENT_SECRET),
-        authorized_user_filename=str(TOKEN_DIR / "token.json"),
-    )
-    sh = gc.open_by_key(SPREADSHEET_ID)
+    sh = _gsheets.get_spreadsheet()
 
     leads_raw = sh.worksheet("LeadsConsolidados").get_all_records()
     ganhas_raw = sh.worksheet("OP GANHAS").get_all_records()

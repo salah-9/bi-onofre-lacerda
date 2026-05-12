@@ -90,12 +90,7 @@ def qualificar(row) -> str:
 
 @st.cache_data(ttl=300, show_spinner="Carregando dados...")
 def carregar_dados():
-    import gspread
-    gc = gspread.oauth(
-        credentials_filename=str(CLIENT_SECRET),
-        authorized_user_filename=str(TOKEN_DIR / "token.json"),
-    )
-    sh = gc.open_by_key(SPREADSHEET_ID)
+    sh = _gsheets.get_spreadsheet()
     raw = sh.worksheet("LeadsConsolidados").get_all_records()
 
     df = pd.DataFrame(raw)
