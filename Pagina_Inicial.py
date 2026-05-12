@@ -11,8 +11,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-_brand.setup()
 _auth.require_login()
+_brand.setup()
 
 st.title("BI Onofre Lacerda")
 st.caption("Selecione um dashboard no menu lateral")

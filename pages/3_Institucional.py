@@ -138,8 +138,8 @@ def carregar_dados():
     return df
 
 
-_brand.setup()
 _auth.require_login()
+_brand.setup()
 
 # ── Interface ────────────────────────────────────────────────────────────────
 st.title("Relatório de Campanhas")

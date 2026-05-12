@@ -182,8 +182,8 @@ def carregar_dados():
     return leads, ganhas
 
 
-_brand.setup()
 _auth.require_login()
+_brand.setup()
 
 # ── Interface ────────────────────────────────────────────────────────────────
 st.title("Dashboard Comercial")

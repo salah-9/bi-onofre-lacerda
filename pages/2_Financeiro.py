@@ -192,8 +192,8 @@ def agregar_corretores(df: pd.DataFrame, tipo: str, valor: str, prime_herdado_se
 
 
 # ── Interface ────────────────────────────────────────────────────────────────
-_brand.setup()
 _auth.require_login()
+_brand.setup()
 
 st.title("Dashboard Financeiro")
 st.caption("Comissões · Status Base / Prime · Valor a pagar")
