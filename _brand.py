@@ -37,8 +37,17 @@ section[data-testid="stSidebar"] .stToggle label {{
 }}
 
 /* ── Top toolbar ── */
-header[data-testid="stHeader"] {{ display: none !important; }}
+header[data-testid="stHeader"] {{
+    background-color: transparent !important;
+    border: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+}}
 [data-testid="stToolbar"] {{ display: none !important; }}
+[data-testid="collapsedControl"] {{
+    display: flex !important;
+    top: 0.5rem !important;
+}}
 
 /* ── Headers ── */
 h1, h2, h3 {{ color: {NAVY} !important; }}
@@ -109,8 +118,17 @@ section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
 }}
 
 /* ── Top toolbar ── */
-header[data-testid="stHeader"] {{ display: none !important; }}
+header[data-testid="stHeader"] {{
+    background-color: transparent !important;
+    border: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+}}
 [data-testid="stToolbar"] {{ display: none !important; }}
+[data-testid="collapsedControl"] {{
+    display: flex !important;
+    top: 0.5rem !important;
+}}
 
 /* ── Headers ── */
 h1, h2, h3 {{ color: {GOLD} !important; }}
