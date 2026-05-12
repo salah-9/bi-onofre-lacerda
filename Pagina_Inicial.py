@@ -8,6 +8,7 @@ st.set_page_config(
     page_title="BI Onofre Lacerda",
     page_icon="🏠",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 _brand.setup()

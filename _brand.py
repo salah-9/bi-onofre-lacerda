@@ -36,12 +36,21 @@ section[data-testid="stSidebar"] .stToggle label {{
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Esconde apenas os botões da direita, mantém toggle do sidebar ── */
-[data-testid="stToolbar"] {{ visibility: hidden !important; }}
+/* ── Header e toolbar ── */
 header[data-testid="stHeader"] {{
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+}}
+[data-testid="stToolbar"] {{ display: none !important; }}
+
+/* ── Sidebar sempre visível, sem botão de fechar ── */
+section[data-testid="stSidebar"] > div:first-child {{
+    padding-top: 1rem !important;
+}}
+button[data-testid="baseButton-headerNoPadding"],
+[data-testid="stSidebarCollapsedControl"] {{
+    display: none !important;
 }}
 
 /* ── Headers ── */
@@ -112,12 +121,21 @@ section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Esconde apenas os botões da direita, mantém toggle do sidebar ── */
-[data-testid="stToolbar"] {{ visibility: hidden !important; }}
+/* ── Header e toolbar ── */
 header[data-testid="stHeader"] {{
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+}}
+[data-testid="stToolbar"] {{ display: none !important; }}
+
+/* ── Sidebar sempre visível, sem botão de fechar ── */
+section[data-testid="stSidebar"] > div:first-child {{
+    padding-top: 1rem !important;
+}}
+button[data-testid="baseButton-headerNoPadding"],
+[data-testid="stSidebarCollapsedControl"] {{
+    display: none !important;
 }}
 
 /* ── Headers ── */

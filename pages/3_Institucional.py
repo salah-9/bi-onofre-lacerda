@@ -24,6 +24,7 @@ st.set_page_config(
     page_title="Relatório de Campanhas",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 
