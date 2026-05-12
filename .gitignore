@@ -1,0 +1,7 @@
+client_secret*.json
+.auth/
+.DS_Store
+__pycache__/
+*.pyc
+.env
+*.webp
