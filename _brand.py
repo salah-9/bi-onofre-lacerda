@@ -36,11 +36,30 @@ section[data-testid="stSidebar"] .stToggle label {{
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Top toolbar — esconde botões mas mantém toggle do sidebar ── */
+/* ── Top toolbar — esconde botões, mantém header invisível mas funcional ── */
 [data-testid="stToolbar"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{
-    background-color: transparent !important;
-    border-bottom: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+/* Botão de abrir sidebar fixo no canto */
+[data-testid="collapsedControl"] {{
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    left: 1rem !important;
+    z-index: 999999 !important;
+    background-color: {NAVY} !important;
+    border-radius: 50% !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4) !important;
+}}
+[data-testid="collapsedControl"] svg {{
+    fill: {GOLD} !important;
 }}
 
 /* ── Headers ── */
@@ -111,11 +130,30 @@ section[data-testid="stSidebar"] hr {{ border-color: {GOLD}55 !important; }}
     border-left: 3px solid {GOLD};
 }}
 
-/* ── Top toolbar — esconde botões mas mantém toggle do sidebar ── */
+/* ── Top toolbar — esconde botões, mantém header invisível mas funcional ── */
 [data-testid="stToolbar"] {{ display: none !important; }}
 header[data-testid="stHeader"] {{
-    background-color: transparent !important;
-    border-bottom: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+/* Botão de abrir sidebar fixo no canto */
+[data-testid="collapsedControl"] {{
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    left: 1rem !important;
+    z-index: 999999 !important;
+    background-color: {NAVY} !important;
+    border-radius: 50% !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4) !important;
+}}
+[data-testid="collapsedControl"] svg {{
+    fill: {GOLD} !important;
 }}
 
 /* ── Headers ── */
