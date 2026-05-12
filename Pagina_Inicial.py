@@ -240,14 +240,14 @@ with tab1:
     col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 3, 3])
     
     with col_f1:
-        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
+        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="com_per_odo")
     
     with col_f2:
         if tipo_periodo == "Trimestre":
-            trimestre_sel = st.selectbox("Trimestre", trimestres_disp)
+            trimestre_sel = st.selectbox("Trimestre", trimestres_disp, key="com_trimestre")
             mes_sel_key = None
         elif tipo_periodo == "Mês":
-            mes_idx = st.selectbox("Mês", range(len(meses_labels)),
+            mes_idx = st.selectbox("Mês", range(len(meses_labels, key="com_m_s")),
                                    format_func=lambda i: meses_labels[i])
             mes_sel_key = meses_keys[mes_idx]
             trimestre_sel = None
@@ -256,10 +256,10 @@ with tab1:
             mes_sel_key = None
     
     with col_f3:
-        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos")
+        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos", key="com_corretor")
     
     with col_f4:
-        campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas")
+        campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas", key="com_campanha")
     
     # ── Aplicar filtros ───────────────────────────────────────────────────────────
     if tipo_periodo == "Trimestre":
@@ -925,12 +925,12 @@ with tab2:
     
     col_f1, col_f2, col_f3 = st.columns([2, 2, 3])
     with col_f1:
-        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
+        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="fin_per_odo")
     with col_f2:
         if tipo_periodo == "Trimestre":
-            periodo_val = st.selectbox("Trimestre", trimestres)
+            periodo_val = st.selectbox("Trimestre", trimestres, key="fin_trimestre")
         elif tipo_periodo == "Mês":
-            idx = st.selectbox("Mês", range(len(meses_labels)),
+            idx = st.selectbox("Mês", range(len(meses_labels, key="fin_m_s")),
                                format_func=lambda i: meses_labels[i])
             periodo_val = meses_keys[idx]
         else:
@@ -938,7 +938,7 @@ with tab2:
     
     corretores_disp = sorted(df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
     with col_f3:
-        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos")
+        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos", key="fin_corretor")
     
     if tipo_periodo == "Trimestre":
         df_fil = df[df["trimestre"] == periodo_val]
@@ -1167,14 +1167,14 @@ with tab3:
     col_f1, col_f2, col_f3 = st.columns([2, 2, 3])
     
     with col_f1:
-        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
+        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="ins_per_odo")
     
     with col_f2:
         if tipo_periodo == "Trimestre":
-            trimestre_sel = st.selectbox("Trimestre", trimestres_disp)
+            trimestre_sel = st.selectbox("Trimestre", trimestres_disp, key="ins_trimestre")
             mes_sel_key = None
         elif tipo_periodo == "Mês":
-            idx = st.selectbox("Mês", range(len(meses_labels)),
+            idx = st.selectbox("Mês", range(len(meses_labels, key="ins_m_s")),
                                format_func=lambda i: meses_labels[i])
             mes_sel_key   = meses_keys[idx]
             trimestre_sel = None
@@ -1183,7 +1183,7 @@ with tab3:
             mes_sel_key   = None
     
     with col_f3:
-        campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas")
+        campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas", key="ins_campanha")
     
     # ── Aplicar filtros ───────────────────────────────────────────────────────────
     if tipo_periodo == "Trimestre":
