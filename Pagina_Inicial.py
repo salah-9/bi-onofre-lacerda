@@ -41,11 +41,8 @@ _auth.require_login()
 # ── Header ────────────────────────────────────────────────────────────────────
 col_logo, _, col_dark = st.columns([3, 3, 1])
 with col_logo:
-    logo = Path(__file__).parent / "logo_onofre.webp"
-    if logo.exists():
-        st.image(str(logo), width=160)
-    else:
-        st.markdown(f"<h2 style='color:{NAVY}; margin:0;'>Onofre Lacerda</h2>", unsafe_allow_html=True)
+    LOGO_URL = "https://s01.jetimgs.com/tnnAwYXphKBPiW3sr35S56TSBu41PCPMXJgG4UpLuMhmB5uKGXsEydyXaxruLCKtnCpQbjr2aUOVnZo7j6D3_ljtfB0XzBhPr4XoKoQDytNwYsrsQ1rd0CC7/logoonofreotimizadamaisdestaquepng.webp"
+    st.image(LOGO_URL, width=160)
 with col_dark:
     dark = st.toggle("🌙", value=st.session_state.get("dark_mode", False), key="dark_mode")
 
