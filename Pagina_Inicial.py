@@ -244,7 +244,7 @@ with tab1:
             trimestre_sel = st.selectbox("Trimestre", trimestres_disp, key="com_trimestre")
             mes_sel_key = None
         elif tipo_periodo == "Mês":
-            mes_idx = st.selectbox("Mês", range(len(meses_labels, key="com_m_s")),
+            mes_idx = st.selectbox("Mês", range(len(meses_labels)), key="com_m_s",
                                    format_func=lambda i: meses_labels[i])
             mes_sel_key = meses_keys[mes_idx]
             trimestre_sel = None
@@ -927,7 +927,7 @@ with tab2:
         if tipo_periodo == "Trimestre":
             periodo_val = st.selectbox("Trimestre", trimestres, key="fin_trimestre")
         elif tipo_periodo == "Mês":
-            idx = st.selectbox("Mês", range(len(meses_labels, key="fin_m_s")),
+            idx = st.selectbox("Mês", range(len(meses_labels)), key="fin_m_s",
                                format_func=lambda i: meses_labels[i])
             periodo_val = meses_keys[idx]
         else:
@@ -1171,7 +1171,7 @@ with tab3:
             trimestre_sel = st.selectbox("Trimestre", trimestres_disp, key="ins_trimestre")
             mes_sel_key = None
         elif tipo_periodo == "Mês":
-            idx = st.selectbox("Mês", range(len(meses_labels, key="ins_m_s")),
+            idx = st.selectbox("Mês", range(len(meses_labels)), key="ins_m_s",
                                format_func=lambda i: meses_labels[i])
             mes_sel_key   = meses_keys[idx]
             trimestre_sel = None
