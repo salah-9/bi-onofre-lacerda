@@ -607,11 +607,33 @@ with tab1:
 # ─────────────────────────────────────────────────────────────────
 # FINANCEIRO
 # ─────────────────────────────────────────────────────────────────
-VGV_GATILHO_PRIME = Decimal('2100000')
+VGV_GATILHO_PRIME    = Decimal("2100000")
 VENDAS_GATILHO_PRIME = 3
-COR_PRIME = '#22C55E'
-COR_PRIME_HERDADO = '#8B5CF6'
-COR_BASE = '#6B7280'
+
+FIN_COR_PRIME3        = "#F59E0B"
+FIN_COR_PRIME2        = "#22C55E"
+FIN_COR_PRIME1        = "#34D399"
+FIN_COR_PRIME_INICIAL = "#06B6D4"
+FIN_COR_BASE          = "#6B7280"
+FIN_COR_AZUL          = "#1E6FE8"
+
+FIN_ORDEM_PRIME = {"Prime +3": 0, "Prime +2": 1, "Prime +1": 2, "Prime inicial": 3, "Base": 4}
+
+FIN_BADGE_PRIME = {
+    "Prime +3":      "🥇 Prime +3",
+    "Prime +2":      "🟢 Prime +2",
+    "Prime +1":      "🟢 Prime +1",
+    "Prime inicial": "🟢 Prime",
+    "Base":          "⚪ Base",
+}
+
+FIN_COR_POR_NIVEL = {
+    "Prime +3":      FIN_COR_PRIME3,
+    "Prime +2":      FIN_COR_PRIME2,
+    "Prime +1":      FIN_COR_PRIME1,
+    "Prime inicial": FIN_COR_PRIME_INICIAL,
+    "Base":          FIN_COR_BASE,
+}
 
 def fin_parse_brl(val) -> Optional[Decimal]:
     s = str(val).strip()
@@ -628,29 +650,47 @@ def fin_parse_brl(val) -> Optional[Decimal]:
 def fin_fmt_brl(v) -> str:
     if v is None:
         return "—"
-    f = float(v)
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return "—"
     return f"R$ {f:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def fin_fmt_pct(v) -> str:
+def fin_fmt_pct(v, decimals=1) -> str:
     if v is None:
         return "—"
-    return f"{float(v):.0f}%"
+    return f"{float(v):.{decimals}f}%"
+
+
+def fin_classificar_nivel(num_vendas: int, atingiu_prime: bool) -> str:
+    if not atingiu_prime:
+        return "Base"
+    extras = num_vendas - VENDAS_GATILHO_PRIME
+    if extras <= 0:
+        return "Prime inicial"
+    elif extras == 1:
+        return "Prime +1"
+    elif extras == 2:
+        return "Prime +2"
+    else:
+        return "Prime +3"
 
 
 @st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
 def fin_carregar_dados():
     sh = _gsheets.get_spreadsheet()
 
-    rows      = sh.worksheet("OP GANHAS").get_all_records()
-    ph_rows   = sh.worksheet("PRIME HERDADO").get_all_records()
+    rows    = sh.worksheet("OP GANHAS").get_all_records()
+    ph_rows = sh.worksheet("PRIME HERDADO").get_all_records()
 
-    # Corretores com Prime Herdado: set de (corretor, trimestre)
     prime_herdado_set = {
         (str(r.get("Corretor Prime", "")).strip(), str(r.get("Trimestre", "")).strip())
         for r in ph_rows
         if r.get("Corretor Prime") and r.get("Trimestre")
     }
+
+    _MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
 
     registros = []
     for row in rows:
@@ -662,21 +702,17 @@ def fin_carregar_dados():
         if not corretor or not trimestre:
             continue
 
-        valor         = fin_parse_brl(row.get("Valor ", row.get("Valor", "")))
+        valor          = fin_parse_brl(row.get("Valor ", row.get("Valor", "")))
         comissao_total = fin_parse_brl(row.get("Comissao Total", ""))
-        r_corretor    = fin_parse_brl(row.get("R$ Corretor", ""))
-        r_captador    = fin_parse_brl(row.get("R$ Captador", ""))
-        pct_corretor  = row.get("% Comissão corretor", "")
-        vgv_acum      = fin_parse_brl(row.get("VGV Acumulado", ""))
-        categoria     = str(row.get("Categoria Venda", "")).strip()
-        prime_flag    = str(row.get("Prime Herdado", "")).strip().upper()
-        ordem         = row.get("Ordem da Venda", "")
+        r_corretor     = fin_parse_brl(row.get("R$ Corretor", ""))
+        r_captador     = fin_parse_brl(row.get("R$ Captador", ""))
+        r_gestao       = fin_parse_brl(row.get("R$ Dayvson", ""))
+        vgv_acum       = fin_parse_brl(row.get("VGV Acumulado", ""))
+        categoria      = str(row.get("Categoria Venda", "")).strip()
+        prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
+        tipo_imovel    = str(row.get("Tipo", "")).strip()
 
-        # Mês derivado de TRIMESTRE + MES da planilha
-        mes_raw = str(row.get("MES", "")).strip()  # formato YYYY-MM
-        if not mes_raw and trimestre:
-            mes_raw = ""
-        _MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
+        mes_raw = str(row.get("MES", "")).strip()
         try:
             ano_m, num_m = mes_raw.split("-")
             mes_label = f"{_MESES[int(num_m)-1]}/{ano_m}"
@@ -690,389 +726,358 @@ def fin_carregar_dados():
             "mes_key":        mes_raw,
             "mes_label":      mes_label,
             "tipo":           tipo,
+            "tipo_imovel":    tipo_imovel,
             "valor":          valor,
             "comissao_total": comissao_total,
             "r_corretor":     r_corretor,
             "r_captador":     r_captador,
-            "pct_corretor":   pct_corretor,
+            "r_gestao":       r_gestao,
             "vgv_acumulado":  vgv_acum,
             "categoria":      categoria,
             "prime_flag":     prime_flag,
-            "ordem":          ordem,
         })
 
     return pd.DataFrame(registros), prime_herdado_set
 
 
-def fin_agregar_corretores(df: pd.DataFrame, tipo: str, valor: str, prime_herdado_set: set) -> list[dict]:
-    df_t = df.copy()
+def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dict]:
     resultados = []
 
-    for corretor in sorted(df_t["corretor"].unique()):
-        df_c = df_t[df_t["corretor"] == corretor]
-        df_vendas   = df_c[df_c["tipo"].str.lower().str.strip() == "venda"]
-        df_locacoes = df_c[df_c["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
+    for corretor in sorted(df["corretor"].unique()):
+        df_c      = df[df["corretor"] == corretor]
+        df_vendas = df_c[df_c["tipo"].str.lower().str.strip() == "venda"]
+        df_loc    = df_c[df_c["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
 
         num_vendas   = len(df_vendas)
-        num_locacoes = len(df_locacoes)
+        num_locacoes = len(df_loc)
 
-        # VGV = último VGV Acumulado registrado para este corretor
         vgv_vals = df_vendas["vgv_acumulado"].dropna()
         vgv = vgv_vals.max() if not vgv_vals.empty else Decimal("0")
 
-        # Status — usa o trimestre predominante do corretor para checar Prime Herdado
         trimestre_check = df_c["trimestre"].dropna().mode()
         trimestre_check = trimestre_check.iloc[0] if not trimestre_check.empty else ""
         is_prime_herdado = (corretor, trimestre_check) in prime_herdado_set
-        atingiu_prime    = "Prime" in df_c["categoria"].values or "SIM" in df_c["prime_flag"].values
+        atingiu_prime = (
+            "Prime" in df_c["categoria"].values
+            or "SIM" in df_c["prime_flag"].values
+            or is_prime_herdado
+        )
 
-        if is_prime_herdado:
-            status = "Prime Herdado"
-        elif atingiu_prime:
-            status = "Prime"
-        else:
-            status = "Base"
+        nivel = fin_classificar_nivel(num_vendas, atingiu_prime)
 
-        # Comissões — soma o que já está preenchido na planilha
-        r_corretor_total  = df_c["r_corretor"].dropna().sum() or None
-        r_captador_total  = df_c["r_captador"].dropna().sum() or None
-        comissao_agencia  = df_c["comissao_total"].dropna().sum() or None
+        r_corretor_total = df_c["r_corretor"].dropna().sum() or None
+        r_gestao_total   = df_c["r_gestao"].dropna().sum() or None
+        comissao_agencia = df_c["comissao_total"].dropna().sum() or None
 
-        # % do corretor (última taxa registrada para vendas)
-        pct_vals = df_vendas["pct_corretor"].replace("", pd.NA).dropna()
-        pct_atual = pct_vals.iloc[-1] if not pct_vals.empty else None
-
-        # Progresso para Prime (somente Base)
         prog_vgv  = float(min(vgv / VGV_GATILHO_PRIME, Decimal("1"))) if vgv else 0.0
         prog_vend = min(num_vendas / VENDAS_GATILHO_PRIME, 1.0)
         progresso = max(prog_vgv, prog_vend)
 
         resultados.append({
             "corretor":         corretor,
-            "captador_principal": df_c["captador"].dropna().mode().iloc[0] if not df_c["captador"].dropna().empty else None,
-            "status":           status,
+            "nivel":            nivel,
+            "is_prime_herdado": is_prime_herdado,
             "num_vendas":       num_vendas,
             "num_locacoes":     num_locacoes,
             "vgv":              vgv,
             "comissao_agencia": comissao_agencia,
             "r_corretor":       r_corretor_total,
-            "r_captador":       r_captador_total,
-            "pct_atual":        pct_atual,
+            "r_gestao":         r_gestao_total,
             "progresso":        progresso,
         })
 
-    # Ordena: Prime Herdado → Prime → Base, depois por R$ Corretor
-    ordem_status = {"Prime Herdado": 0, "Prime": 1, "Base": 2}
-    resultados.sort(key=lambda x: (ordem_status[x["status"]], -(float(x["r_corretor"] or 0))))
+    resultados.sort(key=lambda x: (
+        FIN_ORDEM_PRIME.get(x["nivel"], 99),
+        -(float(x["r_corretor"] or 0)),
+    ))
     return resultados
 
-
-# ── Interface ────────────────────────────────────────────────────────────────
-
-@st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
-def fin_carregar_dados():
-    sh = _gsheets.get_spreadsheet()
-
-    rows      = sh.worksheet("OP GANHAS").get_all_records()
-    ph_rows   = sh.worksheet("PRIME HERDADO").get_all_records()
-
-    # Corretores com Prime Herdado: set de (corretor, trimestre)
-    prime_herdado_set = {
-        (str(r.get("Corretor Prime", "")).strip(), str(r.get("Trimestre", "")).strip())
-        for r in ph_rows
-        if r.get("Corretor Prime") and r.get("Trimestre")
-    }
-
-    registros = []
-    for row in rows:
-        corretor  = str(row.get("Responsavel", "")).strip()
-        captador  = str(row.get("Captador", "")).strip() or None
-        trimestre = str(row.get("TRIMESTRE", "")).strip()
-        tipo      = str(row.get("Tipo de Negocio", "")).strip()
-
-        if not corretor or not trimestre:
-            continue
-
-        valor         = fin_parse_brl(row.get("Valor ", row.get("Valor", "")))
-        comissao_total = fin_parse_brl(row.get("Comissao Total", ""))
-        r_corretor    = fin_parse_brl(row.get("R$ Corretor", ""))
-        r_captador    = fin_parse_brl(row.get("R$ Captador", ""))
-        pct_corretor  = row.get("% Comissão corretor", "")
-        vgv_acum      = fin_parse_brl(row.get("VGV Acumulado", ""))
-        categoria     = str(row.get("Categoria Venda", "")).strip()
-        prime_flag    = str(row.get("Prime Herdado", "")).strip().upper()
-        ordem         = row.get("Ordem da Venda", "")
-
-        # Mês derivado de TRIMESTRE + MES da planilha
-        mes_raw = str(row.get("MES", "")).strip()  # formato YYYY-MM
-        if not mes_raw and trimestre:
-            mes_raw = ""
-        _MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
-        try:
-            ano_m, num_m = mes_raw.split("-")
-            mes_label = f"{_MESES[int(num_m)-1]}/{ano_m}"
-        except Exception:
-            mes_label = mes_raw
-
-        registros.append({
-            "corretor":       corretor,
-            "captador":       captador,
-            "trimestre":      trimestre,
-            "mes_key":        mes_raw,
-            "mes_label":      mes_label,
-            "tipo":           tipo,
-            "valor":          valor,
-            "comissao_total": comissao_total,
-            "r_corretor":     r_corretor,
-            "r_captador":     r_captador,
-            "pct_corretor":   pct_corretor,
-            "vgv_acumulado":  vgv_acum,
-            "categoria":      categoria,
-            "prime_flag":     prime_flag,
-            "ordem":          ordem,
-        })
-
-    return pd.DataFrame(registros), prime_herdado_set
-
-
-def fin_agregar_corretores(df: pd.DataFrame, tipo: str, valor: str, prime_herdado_set: set) -> list[dict]:
-    df_t = df.copy()
-    resultados = []
-
-    for corretor in sorted(df_t["corretor"].unique()):
-        df_c = df_t[df_t["corretor"] == corretor]
-        df_vendas   = df_c[df_c["tipo"].str.lower().str.strip() == "venda"]
-        df_locacoes = df_c[df_c["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
-
-        num_vendas   = len(df_vendas)
-        num_locacoes = len(df_locacoes)
-
-        # VGV = último VGV Acumulado registrado para este corretor
-        vgv_vals = df_vendas["vgv_acumulado"].dropna()
-        vgv = vgv_vals.max() if not vgv_vals.empty else Decimal("0")
-
-        # Status — usa o trimestre predominante do corretor para checar Prime Herdado
-        trimestre_check = df_c["trimestre"].dropna().mode()
-        trimestre_check = trimestre_check.iloc[0] if not trimestre_check.empty else ""
-        is_prime_herdado = (corretor, trimestre_check) in prime_herdado_set
-        atingiu_prime    = "Prime" in df_c["categoria"].values or "SIM" in df_c["prime_flag"].values
-
-        if is_prime_herdado:
-            status = "Prime Herdado"
-        elif atingiu_prime:
-            status = "Prime"
-        else:
-            status = "Base"
-
-        # Comissões — soma o que já está preenchido na planilha
-        r_corretor_total  = df_c["r_corretor"].dropna().sum() or None
-        r_captador_total  = df_c["r_captador"].dropna().sum() or None
-        comissao_agencia  = df_c["comissao_total"].dropna().sum() or None
-
-        # % do corretor (última taxa registrada para vendas)
-        pct_vals = df_vendas["pct_corretor"].replace("", pd.NA).dropna()
-        pct_atual = pct_vals.iloc[-1] if not pct_vals.empty else None
-
-        # Progresso para Prime (somente Base)
-        prog_vgv  = float(min(vgv / VGV_GATILHO_PRIME, Decimal("1"))) if vgv else 0.0
-        prog_vend = min(num_vendas / VENDAS_GATILHO_PRIME, 1.0)
-        progresso = max(prog_vgv, prog_vend)
-
-        resultados.append({
-            "corretor":         corretor,
-            "captador_principal": df_c["captador"].dropna().mode().iloc[0] if not df_c["captador"].dropna().empty else None,
-            "status":           status,
-            "num_vendas":       num_vendas,
-            "num_locacoes":     num_locacoes,
-            "vgv":              vgv,
-            "comissao_agencia": comissao_agencia,
-            "r_corretor":       r_corretor_total,
-            "r_captador":       r_captador_total,
-            "pct_atual":        pct_atual,
-            "progresso":        progresso,
-        })
-
-    # Ordena: Prime Herdado → Prime → Base, depois por R$ Corretor
-    ordem_status = {"Prime Herdado": 0, "Prime": 1, "Base": 2}
-    resultados.sort(key=lambda x: (ordem_status[x["status"]], -(float(x["r_corretor"] or 0))))
-    return resultados
-
-
-# ── Interface ────────────────────────────────────────────────────────────────
 
 with tab2:
-    
+
     st.title("Dashboard Financeiro")
-    st.caption("Comissões · Status Base / Prime · Valor a pagar")
-    
-    df, prime_herdado_set = fin_carregar_dados()
-    
-    trimestres = sorted(df["trimestre"].dropna().replace("", pd.NA).dropna().unique(), reverse=True)
-    if not trimestres:
+    st.caption("Comissões · Status Prime · VGV · Captadores")
+
+    fin_df, fin_prime_herdado_set = fin_carregar_dados()
+
+    fin_trimestres = sorted(fin_df["trimestre"].dropna().replace("", pd.NA).dropna().unique(), reverse=True)
+    if not fin_trimestres:
         st.error("Nenhuma venda encontrada na planilha.")
         st.stop()
-    
-    meses_ord = (
-        df[df["mes_key"] != ""][["mes_key", "mes_label"]]
+
+    fin_meses_ord = (
+        fin_df[fin_df["mes_key"] != ""][["mes_key", "mes_label"]]
         .drop_duplicates()
         .sort_values("mes_key", ascending=False)
     )
-    meses_keys   = meses_ord["mes_key"].tolist()
-    meses_labels = meses_ord["mes_label"].tolist()
-    
-    col_f1, col_f2, col_f3 = st.columns([2, 2, 3])
+    fin_meses_keys   = fin_meses_ord["mes_key"].tolist()
+    fin_meses_labels = fin_meses_ord["mes_label"].tolist()
+
+    col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 3, 3])
     with col_f1:
-        tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="fin_per_odo")
+        fin_tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre"], key="fin_periodo")
     with col_f2:
-        if tipo_periodo == "Trimestre":
-            periodo_val = st.selectbox("Trimestre", trimestres, key="fin_trimestre")
-        elif tipo_periodo == "Mês":
-            idx = st.selectbox("Mês", range(len(meses_labels)), key="fin_m_s",
-                               format_func=lambda i: meses_labels[i])
-            periodo_val = meses_keys[idx]
+        if fin_tipo_periodo == "Trimestre":
+            fin_periodo_val = st.selectbox("Trimestre", fin_trimestres, key="fin_trimestre")
         else:
-            periodo_val = None
-    
-    corretores_disp = sorted(df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
+            fin_periodo_val = None
+
+    fin_captadores_disp = sorted(
+        fin_df["captador"].dropna().replace("", pd.NA).dropna().unique().tolist()
+    )
+    fin_corretores_disp = sorted(fin_df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
+
     with col_f3:
-        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos", key="fin_corretor")
-    
-    if tipo_periodo == "Trimestre":
-        df_fil = df[df["trimestre"] == periodo_val]
-    elif tipo_periodo == "Mês":
-        df_fil = df[df["mes_key"] == periodo_val]
+        fin_captador_sel = st.multiselect("Captador / Construtora", fin_captadores_disp, placeholder="Todos", key="fin_captador")
+    with col_f4:
+        fin_corretor_sel = st.multiselect("Corretor", fin_corretores_disp, placeholder="Todos", key="fin_corretor")
+
+    if fin_tipo_periodo == "Trimestre":
+        fin_df_fil = fin_df[fin_df["trimestre"] == fin_periodo_val].copy()
     else:
-        df_fil = df
-    
-    if corretor_sel:
-        df_fil = df_fil[df_fil["corretor"].isin(corretor_sel)]
-    
-    resultados = fin_agregar_corretores(df_fil, tipo_periodo, periodo_val, prime_herdado_set)
-    
+        fin_df_fil = fin_df.copy()
+
+    if fin_captador_sel:
+        fin_df_fil = fin_df_fil[fin_df_fil["captador"].isin(fin_captador_sel)]
+    if fin_corretor_sel:
+        fin_df_fil = fin_df_fil[fin_df_fil["corretor"].isin(fin_corretor_sel)]
+
+    fin_resultados = fin_agregar_corretores(fin_df_fil, fin_prime_herdado_set)
+
     # ── KPIs ──────────────────────────────────────────────────────────────────────
     st.divider()
-    
-    total_vgv        = sum(float(r["vgv"] or 0) for r in resultados)
-    total_agencia    = sum(float(r["comissao_agencia"] or 0) for r in resultados)
-    total_corretores = sum(float(r["r_corretor"] or 0) for r in resultados)
-    n_prime          = sum(1 for r in resultados if r["status"] in ("Prime", "Prime Herdado"))
-    n_base           = sum(1 for r in resultados if r["status"] == "Base")
-    
-    k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("VGV do Período",            fin_fmt_brl(total_vgv))
-    k2.metric("Comissão Imobiliária",      fin_fmt_brl(total_agencia))
-    k3.metric("Total a Pagar Corretores",  fin_fmt_brl(total_corretores))
-    k4.metric("Corretores Prime 🟢",       n_prime)
-    k5.metric("Corretores Base ⚪",        n_base)
-    
+
+    fin_total_vgv      = sum(float(r["vgv"] or 0) for r in fin_resultados)
+    fin_total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in fin_resultados)
+    fin_total_gestao   = sum(float(r["r_gestao"] or 0) for r in fin_resultados)
+    fin_total_corretor = sum(float(r["r_corretor"] or 0) for r in fin_resultados)
+    fin_n_prime        = sum(1 for r in fin_resultados if r["nivel"] != "Base")
+    fin_n_base         = sum(1 for r in fin_resultados if r["nivel"] == "Base")
+
+    if fin_total_agencia > 0:
+        fin_liquido     = fin_total_agencia - fin_total_corretor - fin_total_gestao
+        fin_pct_liquido = fin_liquido / fin_total_agencia * 100
+    else:
+        fin_liquido     = 0.0
+        fin_pct_liquido = None
+
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("VGV do Período",            fin_fmt_brl(fin_total_vgv))
+    k2.metric("Comissão Imobiliária",      fin_fmt_brl(fin_total_agencia))
+    k3.metric("Valor Pago à Gestão",       fin_fmt_brl(fin_total_gestao))
+    k4.metric("Total Pago aos Corretores", fin_fmt_brl(fin_total_corretor))
+
+    k5, k6, k7, k8 = st.columns(4)
+    k5.metric(
+        "Percentual Líquido da Imobiliária",
+        fin_fmt_pct(fin_pct_liquido),
+        help="(Comissão - Corretor - Gestão) / Comissão",
+    )
+    k6.metric("Líquido Imobiliária",  fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
+    k7.metric("Corretores Prime 🟢",  fin_n_prime)
+    k8.metric("Corretores Base ⚪",   fin_n_base)
+
     st.divider()
-    
-    # ── Cards por corretor ────────────────────────────────────────────────────────
-    st.subheader("Comissões por Corretor")
-    
-    BADGE = {
-        "Prime Herdado": "🟣 Prime Herdado",
-        "Prime":         "🟢 Prime",
-        "Base":          "⚪ Base",
-    }
-    
-    for r in resultados:
-        status  = r["status"]
+
+    # ── Cards de comissão ─────────────────────────────────────────────────────────
+    st.subheader("Comissão")
+
+    for r in fin_resultados:
+        nivel    = r["nivel"]
         corretor = r["corretor"]
-    
-        r_corretor_txt = fin_fmt_brl(r["r_corretor"]) if r["r_corretor"] else "⚠️ Pendente"
-        pct_txt        = fin_fmt_pct(r["pct_atual"])  if r["pct_atual"] is not None else "—"
-    
+        badge    = FIN_BADGE_PRIME.get(nivel, nivel)
+        if r["is_prime_herdado"] and nivel != "Base":
+            badge += " (H)"
+
         with st.container(border=True):
-            col_nome, col_vendas, col_loc, col_vgv, col_imob, col_taxa, col_pagar = st.columns(
-                [3, 1, 1, 2, 2, 1, 2]
-            )
-    
+            col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
+
             with col_nome:
                 st.markdown(f"**{corretor}**")
-                st.caption(BADGE[status])
-    
-            col_vendas.metric("Vendas",     r["num_vendas"])
-            col_loc.metric("Locações",     r["num_locacoes"])
+                st.caption(badge)
+
+            col_vendas.metric("Vendas",   r["num_vendas"])
+            col_loc.metric("Locações",    r["num_locacoes"])
             col_vgv.metric("VGV",         fin_fmt_brl(r["vgv"]))
-            col_imob.metric("Com. Imob.", fin_fmt_brl(r["comissao_agencia"]))
-            col_taxa.metric("Taxa",        pct_txt)
-            col_pagar.metric("A Pagar",   fin_fmt_brl(r["r_corretor"]) if r["r_corretor"] else "⚠️ Pendente")
-    
-        if status == "Base":
-            vgv_f      = float(r["vgv"] or 0)
-            falta_vgv  = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
-            falta_vend = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)
-    
-            if falta_vgv > 0 and falta_vend > 0:
-                msg = f"Faltam {fin_fmt_brl(falta_vgv)} em VGV  ou  {falta_vend} venda(s) para Prime"
+            col_com.metric("Comissão",    fin_fmt_brl(r["r_corretor"]))
+
+        if nivel == "Base":
+            vgv_f     = float(r["vgv"] or 0)
+            falta_vgv = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
+            falta_v   = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)
+
+            if falta_vgv > 0 and falta_v > 0:
+                msg = f"Faltam {fin_fmt_brl(falta_vgv)} em VGV  ou  {falta_v} venda(s) para Prime"
             else:
                 msg = "Atingiu o gatilho — aguardando confirmação Prime"
-    
+
             st.progress(r["progresso"], text=f"Progresso para Prime — {msg}")
-    
+
     st.divider()
-    
-    # ── Gráfico VGV por corretor ──────────────────────────────────────────────────
-    st.subheader("VGV Acumulado por Corretor")
-    
-    def cor_status(s):
-        if s == "Prime Herdado": return COR_PRIME_HERDADO
-        if s == "Prime":         return COR_PRIME
-        return COR_BASE
-    
-    nomes  = [r["corretor"] for r in resultados]
-    vgvs   = [float(r["vgv"] or 0) for r in resultados]
-    cores  = [cor_status(r["status"]) for r in resultados]
-    labels = [fin_fmt_brl(r["vgv"]) for r in resultados]
-    
-    fig = go.Figure(go.Bar(
-        x=vgvs, y=nomes,
-        orientation="h",
-        text=labels, textposition="outside",
-        marker_color=cores,
-    ))
-    fig.add_vline(
-        x=float(VGV_GATILHO_PRIME),
-        line_dash="dash", line_color=COR_PRIME,
-        annotation_text="Meta Prime (R$ 2,1M)",
-        annotation_position="top right",
-        annotation_font_color=COR_PRIME,
-    )
-    fig.update_layout(
-        margin=dict(l=0, r=100, t=10, b=0),
-        height=max(250, len(resultados) * 45),
-        xaxis_title="VGV (R$)",
-        yaxis=dict(autorange="reversed"),
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # ── Gráfico R$ Corretor ───────────────────────────────────────────────────────
-    st.subheader("Comissão a Pagar por Corretor")
-    
-    com_vals = [(r["corretor"], float(r["r_corretor"] or 0), cor_status(r["status"])) for r in resultados]
-    com_vals = [(n, v, c) for n, v, c in com_vals if v > 0]
-    
-    if com_vals:
-        nomes_c, vals_c, cores_c = zip(*com_vals)
-        labels_c = [fin_fmt_brl(Decimal(str(v))) for v in vals_c]
-    
-        fig2 = go.Figure(go.Bar(
-            x=list(vals_c), y=list(nomes_c),
+
+    # ── Pizza Novo x Usado + Ranking VGV ─────────────────────────────────────────
+    col_pizza, col_vgv_rank = st.columns(2)
+
+    with col_pizza:
+        st.subheader("Tipo de Imóvel — Novo x Usado")
+
+        fin_df_vendas = fin_df_fil[fin_df_fil["tipo"].str.lower().str.strip() == "venda"]
+        fin_tipo_counts = (
+            fin_df_vendas["tipo_imovel"]
+            .replace("", pd.NA)
+            .dropna()
+            .value_counts()
+            .reset_index()
+        )
+        fin_tipo_counts.columns = ["Tipo", "Qtd"]
+
+        if not fin_tipo_counts.empty:
+            fig_pizza = go.Figure(go.Pie(
+                labels=fin_tipo_counts["Tipo"],
+                values=fin_tipo_counts["Qtd"],
+                hole=0.45,
+                textinfo="label+percent+value",
+                marker_colors=[FIN_COR_AZUL, FIN_COR_PRIME2, FIN_COR_PRIME3],
+            ))
+            fig_pizza.update_layout(
+                margin=dict(l=0, r=0, t=0, b=20),
+                height=320,
+                showlegend=True,
+                legend=dict(orientation="h", y=-0.1),
+            )
+            st.plotly_chart(fig_pizza, use_container_width=True)
+        else:
+            st.info("Coluna 'Tipo' sem dados para este período.")
+
+    with col_vgv_rank:
+        st.subheader("Ranking VGV por Corretor")
+        st.caption("Ordem decrescente · locações excluídas")
+
+        fin_vgv_data = sorted(
+            [(r["corretor"], float(r["vgv"] or 0), r["nivel"]) for r in fin_resultados],
+            key=lambda x: x[1], reverse=True,
+        )
+
+        if fin_vgv_data:
+            fin_nomes_v  = [d[0] for d in fin_vgv_data]
+            fin_vals_v   = [d[1] for d in fin_vgv_data]
+            fin_cores_v  = [FIN_COR_POR_NIVEL.get(d[2], FIN_COR_BASE) for d in fin_vgv_data]
+            fin_labels_v = [fin_fmt_brl(Decimal(str(v))) for v in fin_vals_v]
+
+            fig_vgv = go.Figure(go.Bar(
+                x=fin_vals_v, y=fin_nomes_v,
+                orientation="h",
+                text=fin_labels_v, textposition="outside",
+                marker_color=fin_cores_v,
+            ))
+            fig_vgv.add_vline(
+                x=float(VGV_GATILHO_PRIME),
+                line_dash="dash", line_color=FIN_COR_PRIME2,
+                annotation_text="Meta Prime (R$ 2,1M)",
+                annotation_position="top right",
+                annotation_font_color=FIN_COR_PRIME2,
+            )
+            fig_vgv.update_layout(
+                margin=dict(l=0, r=100, t=10, b=0),
+                height=max(280, len(fin_nomes_v) * 42),
+                xaxis_title="VGV (R$)",
+                yaxis=dict(autorange="reversed"),
+            )
+            st.plotly_chart(fig_vgv, use_container_width=True)
+        else:
+            st.info("Sem dados de VGV para este período.")
+
+    st.divider()
+
+    # ── Ranking número de vendas ──────────────────────────────────────────────────
+    st.subheader("Ranking — Número de Vendas por Corretor")
+
+    fin_vendas_sorted = sorted(fin_resultados, key=lambda x: x["num_vendas"], reverse=True)
+    if fin_vendas_sorted:
+        fin_nomes_nv = [r["corretor"] for r in fin_vendas_sorted]
+        fin_qtds_nv  = [r["num_vendas"] for r in fin_vendas_sorted]
+        fin_cores_nv = [FIN_COR_POR_NIVEL.get(r["nivel"], FIN_COR_BASE) for r in fin_vendas_sorted]
+
+        fig_nv = go.Figure(go.Bar(
+            x=fin_qtds_nv, y=fin_nomes_nv,
             orientation="h",
-            text=labels_c, textposition="outside",
-            marker_color=list(cores_c),
+            text=fin_qtds_nv, textposition="outside",
+            marker_color=fin_cores_nv,
         ))
-        fig2.update_layout(
-            margin=dict(l=0, r=100, t=10, b=0),
-            height=max(250, len(com_vals) * 45),
-            xaxis_title="R$ Comissão",
+        fig_nv.update_layout(
+            margin=dict(l=0, r=40, t=10, b=0),
+            height=max(250, len(fin_nomes_nv) * 42),
+            xaxis_title="Número de Vendas",
             yaxis=dict(autorange="reversed"),
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig_nv, use_container_width=True)
+
+    st.divider()
+
+    # ── Ranking Captadores ────────────────────────────────────────────────────────
+    st.subheader("Ranking de Captadores")
+    st.caption("Inclui corretores captadores e construtoras parceiras")
+
+    cap_f1, cap_f2, _ = st.columns([2, 2, 3])
+    with cap_f1:
+        fin_cap_periodo = st.selectbox("Período (Captadores)", ["Geral", "Trimestre", "Mês"], key="fin_cap_periodo")
+    with cap_f2:
+        if fin_cap_periodo == "Trimestre":
+            fin_cap_trim = st.selectbox("Trimestre", fin_trimestres, key="fin_cap_trim")
+            fin_df_cap_base = fin_df[fin_df["trimestre"] == fin_cap_trim]
+        elif fin_cap_periodo == "Mês":
+            if fin_meses_labels:
+                fin_cap_idx = st.selectbox(
+                    "Mês", range(len(fin_meses_labels)),
+                    format_func=lambda i: fin_meses_labels[i],
+                    key="fin_cap_mes",
+                )
+                fin_df_cap_base = fin_df[fin_df["mes_key"] == fin_meses_keys[fin_cap_idx]]
+            else:
+                fin_df_cap_base = fin_df.copy()
+        else:
+            fin_df_cap_base = fin_df.copy()
+
+    fin_df_cap = fin_df_cap_base[
+        (fin_df_cap_base["tipo"].str.lower().str.strip() == "venda") &
+        (fin_df_cap_base["captador"].notna()) &
+        (fin_df_cap_base["captador"] != "")
+    ].copy()
+
+    if not fin_df_cap.empty:
+        fin_df_cap["valor_num"] = fin_df_cap["valor"].apply(
+            lambda v: float(v) if v is not None else 0.0
+        )
+        fin_cap_rank = (
+            fin_df_cap.groupby("captador")
+            .agg(vendas=("valor_num", "count"), vgv=("valor_num", "sum"))
+            .reset_index()
+            .sort_values("vgv", ascending=False)
+        )
+        fin_cap_rank["vgv_fmt"] = fin_cap_rank["vgv"].apply(
+            lambda v: fin_fmt_brl(Decimal(str(v))) if v else "—"
+        )
+
+        fig_cap = go.Figure(go.Bar(
+            x=fin_cap_rank["vgv"].tolist(),
+            y=fin_cap_rank["captador"].tolist(),
+            orientation="h",
+            text=fin_cap_rank["vgv_fmt"].tolist(),
+            textposition="outside",
+            marker_color=FIN_COR_AZUL,
+            customdata=fin_cap_rank["vendas"].tolist(),
+            hovertemplate="<b>%{y}</b><br>VGV: %{text}<br>Vendas: %{customdata}<extra></extra>",
+        ))
+        fig_cap.update_layout(
+            margin=dict(l=0, r=100, t=10, b=0),
+            height=max(280, len(fin_cap_rank) * 42),
+            xaxis_title="VGV (R$)",
+            yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(fig_cap, use_container_width=True)
     else:
-        st.info("Nenhuma comissão calculada para este trimestre.")
-    
+        st.info("Sem dados de captador para este período.")
+
     st.caption("Dados atualizados a cada 5 min · Fonte: OP GANHAS + PRIME HERDADO")
 
 
