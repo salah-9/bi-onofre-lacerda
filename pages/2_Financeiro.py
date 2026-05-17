@@ -1,4 +1,4 @@
-"""Dashboard Financeiro — Comissões da equipe comercial."""
+"""Dashboard Financeiro — Gestão e Corretores."""
 
 import sys
 from decimal import Decimal, InvalidOperation
@@ -7,7 +7,6 @@ from typing import Optional
 
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -33,14 +32,11 @@ COR_PRIME1        = "#34D399"
 COR_PRIME_INICIAL = "#06B6D4"
 COR_BASE          = "#6B7280"
 COR_AZUL          = "#1E6FE8"
+COR_VERMELHO      = "#EF4444"
 
-ORDEM_PRIME = {
-    "Prime +3":      0,
-    "Prime +2":      1,
-    "Prime +1":      2,
-    "Prime inicial": 3,
-    "Base":          4,
-}
+NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime inicial", "Base"]
+
+ORDEM_PRIME = {n: i for i, n in enumerate(NIVEIS_ORDEM)}
 
 BADGE_PRIME = {
     "Prime +3":      "🥇 Prime +3",
@@ -217,12 +213,12 @@ def agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dict]:
     return resultados
 
 
-# ── Interface ────────────────────────────────────────────────────────────────
+# ── Auth + Brand ──────────────────────────────────────────────────────────────
 _auth.require_login()
 _brand.setup()
 
 st.title("Dashboard Financeiro")
-st.caption("Comissões · Status Prime · VGV · Captadores")
+st.caption("Visão de gestão e desempenho dos corretores")
 
 df, prime_herdado_set = carregar_dados()
 
@@ -239,52 +235,67 @@ meses_ord = (
 meses_keys   = meses_ord["mes_key"].tolist()
 meses_labels = meses_ord["mes_label"].tolist()
 
-# ── Filtros ───────────────────────────────────────────────────────────────────
-col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 3, 3])
+# ── Filtros globais de período ────────────────────────────────────────────────
+col_f1, col_f2 = st.columns([2, 3])
 
 with col_f1:
-    tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre"])
+    tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
 
 with col_f2:
     if tipo_periodo == "Trimestre":
         periodo_val = st.selectbox("Trimestre", trimestres)
+        periodo_key = None
+    elif tipo_periodo == "Mês":
+        idx = st.selectbox("Mês", range(len(meses_labels)), format_func=lambda i: meses_labels[i])
+        periodo_key = meses_keys[idx]
+        periodo_val = None
     else:
         periodo_val = None
+        periodo_key = None
 
-captadores_disp = sorted(
-    df["captador"].dropna().replace("", pd.NA).dropna().unique().tolist()
-)
-corretores_disp = sorted(df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
-
-with col_f3:
-    captador_sel = st.multiselect("Captador / Construtora", captadores_disp, placeholder="Todos")
-
-with col_f4:
-    corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos")
-
-# ── Aplicar filtros ───────────────────────────────────────────────────────────
+# Aplica filtro de período
 if tipo_periodo == "Trimestre":
     df_fil = df[df["trimestre"] == periodo_val].copy()
+elif tipo_periodo == "Mês":
+    df_fil = df[df["mes_key"] == periodo_key].copy()
 else:
     df_fil = df.copy()
 
-if captador_sel:
-    df_fil = df_fil[df_fil["captador"].isin(captador_sel)]
+df_vendas_fil = df_fil[df_fil["tipo"].str.lower().str.strip() == "venda"]
+df_loc_fil    = df_fil[df_fil["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
 
-if corretor_sel:
-    df_fil = df_fil[df_fil["corretor"].isin(corretor_sel)]
+resultados_todos = agregar_corretores(df_fil, prime_herdado_set)
 
-resultados = agregar_corretores(df_fil, prime_herdado_set)
+# ══════════════════════════════════════════════════════════════════════════════
+# SEÇÃO 1 — GESTÃO
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown(
+    "<h2 style='margin-top:1.5rem; margin-bottom:0;'>📊 Gestão</h2>"
+    "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Visão interna — não compartilhar com corretores</p>",
+    unsafe_allow_html=True,
+)
 
-# ── KPIs ──────────────────────────────────────────────────────────────────────
-st.divider()
+# ── KPIs — Volume ─────────────────────────────────────────────────────────────
+total_vendas   = len(df_vendas_fil)
+total_locacoes = len(df_loc_fil)
+total_negocios = total_vendas + total_locacoes
 
-total_vgv      = sum(float(r["vgv"] or 0) for r in resultados)
-total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in resultados)
-total_gestao   = sum(float(r["r_gestao"] or 0) for r in resultados)
-total_corretor = sum(float(r["r_corretor"] or 0) for r in resultados)
-n_prime        = sum(1 for r in resultados if r["nivel"] != "Base")
-n_base         = sum(1 for r in resultados if r["nivel"] == "Base")
+total_vgv = sum(float(r["vgv"] or 0) for r in resultados_todos)
+ticket_medio = total_vgv / total_vendas if total_vendas > 0 else None
+
+k1, k2, k3, k4, k5 = st.columns(5)
+k1.metric("VGV do Período",      fmt_brl(total_vgv))
+k2.metric("Ticket Médio",        fmt_brl(ticket_medio))
+k3.metric("Negócios Fechados",   f"{total_negocios:,}")
+k4.metric("Vendas",              f"{total_vendas:,}")
+k5.metric("Locações",            f"{total_locacoes:,}")
+
+# ── KPIs — Financeiro ─────────────────────────────────────────────────────────
+total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in resultados_todos)
+total_gestao   = sum(float(r["r_gestao"] or 0) for r in resultados_todos)
+total_corretor = sum(float(r["r_corretor"] or 0) for r in resultados_todos)
+n_prime        = sum(1 for r in resultados_todos if r["nivel"] != "Base")
+n_base         = sum(1 for r in resultados_todos if r["nivel"] == "Base")
 
 if total_agencia > 0:
     liquido     = total_agencia - total_corretor - total_gestao
@@ -293,67 +304,29 @@ else:
     liquido     = 0.0
     pct_liquido = None
 
-k1, k2, k3, k4 = st.columns(4)
-k1.metric("VGV do Período",           fmt_brl(total_vgv))
-k2.metric("Comissão Imobiliária",     fmt_brl(total_agencia))
-k3.metric("Valor Pago à Gestão",      fmt_brl(total_gestao))
-k4.metric("Total Pago aos Corretores", fmt_brl(total_corretor))
-
-k5, k6, k7, k8 = st.columns(4)
-k5.metric(
-    "Percentual Líquido da Imobiliária",
+k6, k7, k8, k9, k10 = st.columns(5)
+k6.metric("Comissão Imobiliária",      fmt_brl(total_agencia))
+k7.metric("Total Pago Corretores",     fmt_brl(total_corretor))
+k8.metric("Total Pago à Gestão",       fmt_brl(total_gestao))
+k9.metric(
+    "% Líquido da Imobiliária",
     fmt_pct(pct_liquido),
-    help="(Comissão - Corretor - Gestão) / Comissão",
+    help="(Comissão − Corretores − Gestão) ÷ Comissão",
 )
-k6.metric("Líquido Imobiliária",  fmt_brl(liquido if total_agencia > 0 else None))
-k7.metric("Corretores Prime 🟢",  n_prime)
-k8.metric("Corretores Base ⚪",   n_base)
+k10.metric("R$ Líquido Imobiliária",   fmt_brl(liquido if total_agencia > 0 else None))
+
+k11, k12, *_ = st.columns(5)
+k11.metric("Corretores Prime 🟢", n_prime)
+k12.metric("Corretores Base ⚪",  n_base)
 
 st.divider()
 
-# ── Cards de comissão por corretor ────────────────────────────────────────────
-st.subheader("Comissão")
-
-for r in resultados:
-    nivel    = r["nivel"]
-    corretor = r["corretor"]
-    badge    = BADGE_PRIME.get(nivel, nivel)
-    if r["is_prime_herdado"] and nivel != "Base":
-        badge += " (H)"
-
-    with st.container(border=True):
-        col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
-
-        with col_nome:
-            st.markdown(f"**{corretor}**")
-            st.caption(badge)
-
-        col_vendas.metric("Vendas",   r["num_vendas"])
-        col_loc.metric("Locações",    r["num_locacoes"])
-        col_vgv.metric("VGV",         fmt_brl(r["vgv"]))
-        col_com.metric("Comissão",    fmt_brl(r["r_corretor"]))
-
-    if nivel == "Base":
-        vgv_f     = float(r["vgv"] or 0)
-        falta_vgv = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
-        falta_v   = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)
-
-        if falta_vgv > 0 and falta_v > 0:
-            msg = f"Faltam {fmt_brl(falta_vgv)} em VGV  ou  {falta_v} venda(s) para Prime"
-        else:
-            msg = "Atingiu o gatilho — aguardando confirmação Prime"
-
-        st.progress(r["progresso"], text=f"Progresso para Prime — {msg}")
-
-st.divider()
-
-# ── Pizza Novo x Usado + Ranking VGV ─────────────────────────────────────────
+# ── Gráficos — Pizza Novo x Usado + Ranking VGV ───────────────────────────────
 col_pizza, col_vgv_rank = st.columns(2)
 
 with col_pizza:
     st.subheader("Tipo de Imóvel — Novo x Usado")
 
-    df_vendas_fil = df_fil[df_fil["tipo"].str.lower().str.strip() == "venda"]
     tipo_counts = (
         df_vendas_fil["tipo_imovel"]
         .replace("", pd.NA)
@@ -374,21 +347,19 @@ with col_pizza:
         fig_pizza.update_layout(
             margin=dict(l=0, r=0, t=0, b=20),
             height=320,
-            showlegend=True,
             legend=dict(orientation="h", y=-0.1),
         )
         st.plotly_chart(fig_pizza, use_container_width=True)
     else:
-        st.info("Coluna 'Tipo' sem dados para este período.")
+        st.info("Sem dados de tipo de imóvel para este período.")
 
 with col_vgv_rank:
     st.subheader("Ranking VGV por Corretor")
     st.caption("Ordem decrescente · locações excluídas")
 
     vgv_data = sorted(
-        [(r["corretor"], float(r["vgv"] or 0), r["nivel"]) for r in resultados],
-        key=lambda x: x[1],
-        reverse=True,
+        [(r["corretor"], float(r["vgv"] or 0), r["nivel"]) for r in resultados_todos],
+        key=lambda x: x[1], reverse=True,
     )
 
     if vgv_data:
@@ -420,102 +391,149 @@ with col_vgv_rank:
     else:
         st.info("Sem dados de VGV para este período.")
 
-st.divider()
+# ── Ranking nº Vendas + Ranking Captadores ────────────────────────────────────
+col_vendas_rank, col_cap_rank = st.columns(2)
 
-# ── Ranking número de vendas ──────────────────────────────────────────────────
-st.subheader("Ranking — Número de Vendas por Corretor")
+with col_vendas_rank:
+    st.subheader("Ranking — Nº de Vendas por Corretor")
 
-vendas_sorted = sorted(resultados, key=lambda x: x["num_vendas"], reverse=True)
-if vendas_sorted:
-    nomes_nv = [r["corretor"] for r in vendas_sorted]
-    qtds_nv  = [r["num_vendas"] for r in vendas_sorted]
-    cores_nv = [COR_POR_NIVEL.get(r["nivel"], COR_BASE) for r in vendas_sorted]
+    vendas_sorted = sorted(resultados_todos, key=lambda x: x["num_vendas"], reverse=True)
 
-    fig_nv = go.Figure(go.Bar(
-        x=qtds_nv, y=nomes_nv,
-        orientation="h",
-        text=qtds_nv, textposition="outside",
-        marker_color=cores_nv,
-    ))
-    fig_nv.update_layout(
-        margin=dict(l=0, r=40, t=10, b=0),
-        height=max(250, len(nomes_nv) * 42),
-        xaxis_title="Número de Vendas",
-        yaxis=dict(autorange="reversed"),
-    )
-    st.plotly_chart(fig_nv, use_container_width=True)
+    if vendas_sorted:
+        nomes_nv = [r["corretor"] for r in vendas_sorted]
+        qtds_nv  = [r["num_vendas"] for r in vendas_sorted]
+        cores_nv = [COR_POR_NIVEL.get(r["nivel"], COR_BASE) for r in vendas_sorted]
 
-st.divider()
-
-# ── Ranking Captadores ────────────────────────────────────────────────────────
-st.subheader("Ranking de Captadores")
-st.caption("Inclui corretores captadores e construtoras parceiras")
-
-cap_f1, cap_f2, _ = st.columns([2, 2, 3])
-
-with cap_f1:
-    cap_periodo_tipo = st.selectbox(
-        "Período (Captadores)", ["Geral", "Trimestre", "Mês"],
-        key="cap_periodo_tipo",
-    )
-
-with cap_f2:
-    if cap_periodo_tipo == "Trimestre":
-        cap_trim = st.selectbox("Trimestre", trimestres, key="cap_trim")
-        df_cap_base = df[df["trimestre"] == cap_trim]
-    elif cap_periodo_tipo == "Mês":
-        if meses_labels:
-            idx = st.selectbox(
-                "Mês", range(len(meses_labels)),
-                format_func=lambda i: meses_labels[i],
-                key="cap_mes",
-            )
-            df_cap_base = df[df["mes_key"] == meses_keys[idx]]
-        else:
-            df_cap_base = df.copy()
-    else:
-        df_cap_base = df.copy()
-
-df_cap = df_cap_base[
-    (df_cap_base["tipo"].str.lower().str.strip() == "venda") &
-    (df_cap_base["captador"].notna()) &
-    (df_cap_base["captador"] != "")
-].copy()
-
-if not df_cap.empty:
-    df_cap["valor_num"] = df_cap["valor"].apply(lambda v: float(v) if v is not None else 0.0)
-
-    cap_rank = (
-        df_cap.groupby("captador")
-        .agg(
-            vendas=("valor_num", "count"),
-            vgv=("valor_num", "sum"),
+        fig_nv = go.Figure(go.Bar(
+            x=qtds_nv, y=nomes_nv,
+            orientation="h",
+            text=qtds_nv, textposition="outside",
+            marker_color=cores_nv,
+        ))
+        fig_nv.update_layout(
+            margin=dict(l=0, r=40, t=10, b=0),
+            height=max(250, len(nomes_nv) * 42),
+            xaxis_title="Número de Vendas",
+            yaxis=dict(autorange="reversed"),
         )
-        .reset_index()
-        .sort_values("vgv", ascending=False)
-    )
-    cap_rank["vgv_fmt"] = cap_rank["vgv"].apply(
-        lambda v: fmt_brl(Decimal(str(v))) if v else "—"
-    )
+        st.plotly_chart(fig_nv, use_container_width=True)
 
-    fig_cap = go.Figure(go.Bar(
-        x=cap_rank["vgv"].tolist(),
-        y=cap_rank["captador"].tolist(),
-        orientation="h",
-        text=cap_rank["vgv_fmt"].tolist(),
-        textposition="outside",
-        marker_color=COR_AZUL,
-        customdata=cap_rank["vendas"].tolist(),
-        hovertemplate="<b>%{y}</b><br>VGV: %{text}<br>Vendas: %{customdata}<extra></extra>",
-    ))
-    fig_cap.update_layout(
-        margin=dict(l=0, r=100, t=10, b=0),
-        height=max(280, len(cap_rank) * 42),
-        xaxis_title="VGV (R$)",
-        yaxis=dict(autorange="reversed"),
-    )
-    st.plotly_chart(fig_cap, use_container_width=True)
+with col_cap_rank:
+    st.subheader("Ranking de Captadores")
+    st.caption("Corretores captadores e construtoras parceiras")
+
+    df_cap = df_vendas_fil[
+        df_vendas_fil["captador"].notna() &
+        (df_vendas_fil["captador"] != "")
+    ].copy()
+
+    if not df_cap.empty:
+        df_cap["valor_num"] = df_cap["valor"].apply(
+            lambda v: float(v) if v is not None else 0.0
+        )
+        cap_rank = (
+            df_cap.groupby("captador")
+            .agg(vendas=("valor_num", "count"), vgv=("valor_num", "sum"))
+            .reset_index()
+            .sort_values("vgv", ascending=False)
+        )
+        cap_rank["vgv_fmt"] = cap_rank["vgv"].apply(
+            lambda v: fmt_brl(Decimal(str(v))) if v else "—"
+        )
+
+        fig_cap = go.Figure(go.Bar(
+            x=cap_rank["vgv"].tolist(),
+            y=cap_rank["captador"].tolist(),
+            orientation="h",
+            text=cap_rank["vgv_fmt"].tolist(),
+            textposition="outside",
+            marker_color=COR_AZUL,
+            customdata=cap_rank["vendas"].tolist(),
+            hovertemplate="<b>%{y}</b><br>VGV: %{text}<br>Vendas: %{customdata}<extra></extra>",
+        ))
+        fig_cap.update_layout(
+            margin=dict(l=0, r=100, t=10, b=0),
+            height=max(250, len(cap_rank) * 42),
+            xaxis_title="VGV (R$)",
+            yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(fig_cap, use_container_width=True)
+    else:
+        st.info("Sem dados de captador para este período.")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SEÇÃO 2 — CORRETORES
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown(
+    "<h2 style='margin-top:2rem; margin-bottom:0;'>👤 Corretores</h2>"
+    "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Desempenho individual por período</p>",
+    unsafe_allow_html=True,
+)
+
+# Filtro de corretor específico (só afeta esta seção)
+corretores_disp = sorted(df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
+corretor_sel = st.multiselect("Filtrar por corretor", corretores_disp, placeholder="Todos os corretores")
+
+if corretor_sel:
+    df_corretores = df_fil[df_fil["corretor"].isin(corretor_sel)].copy()
 else:
-    st.info("Sem dados de captador para este período.")
+    df_corretores = df_fil.copy()
+
+resultados_corretores = agregar_corretores(df_corretores, prime_herdado_set)
+
+# KPIs resumidos da seção corretores
+cor_total_vgv      = sum(float(r["vgv"] or 0) for r in resultados_corretores)
+cor_total_vendas   = sum(r["num_vendas"] for r in resultados_corretores)
+cor_total_locacoes = sum(r["num_locacoes"] for r in resultados_corretores)
+cor_ticket         = cor_total_vgv / cor_total_vendas if cor_total_vendas > 0 else None
+cor_total_com      = sum(float(r["r_corretor"] or 0) for r in resultados_corretores)
+
+kc1, kc2, kc3, kc4 = st.columns(4)
+kc1.metric("VGV",              fmt_brl(cor_total_vgv))
+kc2.metric("Ticket Médio",     fmt_brl(cor_ticket))
+kc3.metric("Negócios",         f"{cor_total_vendas + cor_total_locacoes:,}")
+kc4.metric("Comissão Gerada",  fmt_brl(cor_total_com))
+
+st.divider()
+
+# Cards agrupados por nível Prime (pula níveis sem corretores)
+for nivel in NIVEIS_ORDEM:
+    grupo = [r for r in resultados_corretores if r["nivel"] == nivel]
+    if not grupo:
+        continue
+
+    badge_label = BADGE_PRIME.get(nivel, nivel)
+    st.markdown(f"**{badge_label}**")
+
+    for r in grupo:
+        corretor = r["corretor"]
+        label    = badge_label
+        if r["is_prime_herdado"] and nivel != "Base":
+            label += " (H)"
+
+        with st.container(border=True):
+            col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
+
+            with col_nome:
+                st.markdown(f"**{corretor}**")
+                st.caption(label)
+
+            col_vendas.metric("Vendas",   r["num_vendas"])
+            col_loc.metric("Locações",    r["num_locacoes"])
+            col_vgv.metric("VGV",         fmt_brl(r["vgv"]))
+            col_com.metric("Comissão",    fmt_brl(r["r_corretor"]))
+
+        if nivel == "Base":
+            vgv_f     = float(r["vgv"] or 0)
+            falta_vgv = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
+            falta_v   = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)
+            msg = (
+                f"Faltam {fmt_brl(falta_vgv)} em VGV  ou  {falta_v} venda(s) para Prime"
+                if falta_vgv > 0 and falta_v > 0
+                else "Atingiu o gatilho — aguardando confirmação Prime"
+            )
+            st.progress(r["progresso"], text=f"Progresso para Prime — {msg}")
+
+    st.markdown("")  # espaço entre grupos de nível
 
 st.caption("Dados atualizados a cada 5 min · Fonte: OP GANHAS + PRIME HERDADO")
