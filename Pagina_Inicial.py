@@ -617,22 +617,22 @@ FIN_COR_PRIME_INICIAL = "#06B6D4"
 FIN_COR_BASE          = "#6B7280"
 FIN_COR_AZUL          = "#1E6FE8"
 
-FIN_ORDEM_PRIME = {"Prime +3": 0, "Prime +2": 1, "Prime +1": 2, "Prime inicial": 3, "Base": 4}
+FIN_ORDEM_PRIME = {"Prime +3": 0, "Prime +2": 1, "Prime +1": 2, "Prime": 3, "Prime Inicial": 4}
 
 FIN_BADGE_PRIME = {
     "Prime +3":      "🥇 Prime +3",
     "Prime +2":      "🟢 Prime +2",
     "Prime +1":      "🟢 Prime +1",
-    "Prime inicial": "🟢 Prime",
-    "Base":          "⚪ Base",
+    "Prime":         "🟢 Prime",
+    "Prime Inicial": "⚪ Prime Inicial",
 }
 
 FIN_COR_POR_NIVEL = {
     "Prime +3":      FIN_COR_PRIME3,
     "Prime +2":      FIN_COR_PRIME2,
     "Prime +1":      FIN_COR_PRIME1,
-    "Prime inicial": FIN_COR_PRIME_INICIAL,
-    "Base":          FIN_COR_BASE,
+    "Prime":         FIN_COR_PRIME_INICIAL,
+    "Prime Inicial": FIN_COR_BASE,
 }
 
 def fin_parse_brl(val) -> Optional[Decimal]:
@@ -674,10 +674,10 @@ def fin_normalizar_tipo(val: str) -> str:
 
 def fin_classificar_nivel(num_vendas: int, atingiu_prime: bool) -> str:
     if not atingiu_prime:
-        return "Base"
+        return "Prime Inicial"
     extras = num_vendas - VENDAS_GATILHO_PRIME
     if extras <= 0:
-        return "Prime inicial"
+        return "Prime"
     elif extras == 1:
         return "Prime +1"
     elif extras == 2:
@@ -802,7 +802,7 @@ def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dic
     return resultados
 
 
-FIN_NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime inicial", "Base"]
+FIN_NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime", "Prime Inicial"]
 
 with tab2:
 
@@ -877,8 +877,8 @@ with tab2:
     fin_total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in fin_resultados_todos)
     fin_total_gestao   = sum(float(r["r_gestao"] or 0) for r in fin_resultados_todos)
     fin_total_corretor = sum(float(r["r_corretor"] or 0) for r in fin_resultados_todos)
-    fin_n_prime        = sum(1 for r in fin_resultados_todos if r["nivel"] != "Base")
-    fin_n_base         = sum(1 for r in fin_resultados_todos if r["nivel"] == "Base")
+    fin_n_prime        = sum(1 for r in fin_resultados_todos if r["nivel"] != "Prime Inicial")
+    fin_n_base         = sum(1 for r in fin_resultados_todos if r["nivel"] == "Prime Inicial")
 
     if fin_total_agencia > 0:
         fin_liquido     = fin_total_agencia - fin_total_corretor - fin_total_gestao
@@ -896,8 +896,8 @@ with tab2:
     k10.metric("R$ Líquido Imob.",     fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
 
     k11, k12, *_ = st.columns(5)
-    k11.metric("Corretores Prime 🟢", fin_n_prime)
-    k12.metric("Corretores Base ⚪",  fin_n_base)
+    k11.metric("Corretores Prime 🟢",         fin_n_prime)
+    k12.metric("Corretores Prime Inicial ⚪", fin_n_base)
 
     st.divider()
 
@@ -1051,7 +1051,7 @@ with tab2:
 
         for r in grupo:
             label = fin_badge_label
-            if r["is_prime_herdado"] and nivel != "Base":
+            if r["is_prime_herdado"] and nivel != "Prime Inicial":
                 label += " (H)"
 
             with st.container(border=True):
@@ -1064,7 +1064,7 @@ with tab2:
                 col_vgv.metric("VGV",         fin_fmt_brl(r["vgv"]))
                 col_com.metric("Comissão",    fin_fmt_brl(r["r_corretor"]))
 
-            if nivel == "Base":
+            if nivel == "Prime Inicial":
                 vgv_f     = float(r["vgv"] or 0)
                 falta_vgv = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
                 falta_v   = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)

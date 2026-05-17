@@ -34,7 +34,7 @@ COR_BASE          = "#6B7280"
 COR_AZUL          = "#1E6FE8"
 COR_VERMELHO      = "#EF4444"
 
-NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime inicial", "Base"]
+NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime", "Prime Inicial"]
 
 ORDEM_PRIME = {n: i for i, n in enumerate(NIVEIS_ORDEM)}
 
@@ -42,25 +42,25 @@ BADGE_PRIME = {
     "Prime +3":      "🥇 Prime +3",
     "Prime +2":      "🟢 Prime +2",
     "Prime +1":      "🟢 Prime +1",
-    "Prime inicial": "🟢 Prime",
-    "Base":          "⚪ Base",
+    "Prime":         "🟢 Prime",
+    "Prime Inicial": "⚪ Prime Inicial",
 }
 
 COR_POR_NIVEL = {
     "Prime +3":      COR_PRIME3,
     "Prime +2":      COR_PRIME2,
     "Prime +1":      COR_PRIME1,
-    "Prime inicial": COR_PRIME_INICIAL,
-    "Base":          COR_BASE,
+    "Prime":         COR_PRIME_INICIAL,
+    "Prime Inicial": COR_BASE,
 }
 
 
 def classificar_nivel(num_vendas: int, atingiu_prime: bool) -> str:
     if not atingiu_prime:
-        return "Base"
+        return "Prime Inicial"
     extras = num_vendas - VENDAS_GATILHO_PRIME
     if extras <= 0:
-        return "Prime inicial"
+        return "Prime"
     elif extras == 1:
         return "Prime +1"
     elif extras == 2:
@@ -303,8 +303,8 @@ k5.metric("Locações",            f"{total_locacoes:,}")
 total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in resultados_todos)
 total_gestao   = sum(float(r["r_gestao"] or 0) for r in resultados_todos)
 total_corretor = sum(float(r["r_corretor"] or 0) for r in resultados_todos)
-n_prime        = sum(1 for r in resultados_todos if r["nivel"] != "Base")
-n_base         = sum(1 for r in resultados_todos if r["nivel"] == "Base")
+n_prime        = sum(1 for r in resultados_todos if r["nivel"] != "Prime Inicial")
+n_base         = sum(1 for r in resultados_todos if r["nivel"] == "Prime Inicial")
 
 if total_agencia > 0:
     liquido     = total_agencia - total_corretor - total_gestao
@@ -325,8 +325,8 @@ k9.metric(
 k10.metric("R$ Líquido Imobiliária",   fmt_brl(liquido if total_agencia > 0 else None))
 
 k11, k12, *_ = st.columns(5)
-k11.metric("Corretores Prime 🟢", n_prime)
-k12.metric("Corretores Base ⚪",  n_base)
+k11.metric("Corretores Prime 🟢",         n_prime)
+k12.metric("Corretores Prime Inicial ⚪", n_base)
 
 st.divider()
 
@@ -517,7 +517,7 @@ for nivel in NIVEIS_ORDEM:
     for r in grupo:
         corretor = r["corretor"]
         label    = badge_label
-        if r["is_prime_herdado"] and nivel != "Base":
+        if r["is_prime_herdado"] and nivel != "Prime Inicial":
             label += " (H)"
 
         with st.container(border=True):
@@ -532,7 +532,7 @@ for nivel in NIVEIS_ORDEM:
             col_vgv.metric("VGV",         fmt_brl(r["vgv"]))
             col_com.metric("Comissão",    fmt_brl(r["r_corretor"]))
 
-        if nivel == "Base":
+        if nivel == "Prime Inicial":
             vgv_f     = float(r["vgv"] or 0)
             falta_vgv = max(float(VGV_GATILHO_PRIME) - vgv_f, 0)
             falta_v   = max(VENDAS_GATILHO_PRIME - r["num_vendas"], 0)
