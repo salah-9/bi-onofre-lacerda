@@ -4,7 +4,8 @@ import base64
 from pathlib import Path
 import streamlit as st
 
-LOGO      = Path(__file__).parent / "logo_onofre.webp"
+LOGO       = Path(__file__).parent / "logo_onofre.png"
+LOGO_LIGHT = Path(__file__).parent / "logo_onofre_light.png"
 _FONT_DIR = Path(__file__).parent / "fonts"
 
 
@@ -283,11 +284,21 @@ hr {{ border-color: rgba(255,251,214,0.15) !important; }}
 
 
 def setup() -> bool:
-    if LOGO.exists():
-        st.sidebar.image(str(LOGO), width=180)
+    logo_path = LOGO_LIGHT if LOGO_LIGHT.exists() else (LOGO if LOGO.exists() else None)
+    if logo_path:
+        logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
+        st.sidebar.markdown(
+            f'<div style="text-align:center; padding:1.2rem 0.5rem 0.5rem 0.5rem;">'
+            f'<img src="data:image/png;base64,{logo_b64}" '
+            f'style="width:100%; max-width:230px; display:block; margin:0 auto;">'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
     else:
         st.sidebar.markdown(
-            f"<h3 style='color:{CREME}; font-family:Cinzel,serif; letter-spacing:0.05em;'>Onofre Lacerda</h3>",
+            f"<div style='text-align:center; padding:1rem 0;'>"
+            f"<span style='color:{CREME}; font-family:TrajanPro,serif; "
+            f"letter-spacing:0.06em; font-size:0.9rem;'>ONOFRE LACERDA</span></div>",
             unsafe_allow_html=True,
         )
 
