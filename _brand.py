@@ -76,6 +76,48 @@ section[data-testid="stSidebar"] hr { border-color: rgba(255,251,214,0.2) !impor
     border-left: 3px solid #FFFBD6 !important;
 }
 
+/* Section headers */
+.ol-section {
+    padding: 0.6rem 1.1rem;
+    margin: 2rem 0 1rem 0;
+    border-left: 3px solid #184D6C;
+    background: rgba(24,77,108,0.05);
+    border-radius: 0 4px 4px 0;
+}
+.ol-section-dark {
+    padding: 0.6rem 1.1rem;
+    margin: 2rem 0 1rem 0;
+    border-left: 3px solid #FFFBD6;
+    background: rgba(255,251,214,0.06);
+    border-radius: 0 4px 4px 0;
+}
+.ol-section-title {
+    font-family: 'TrajanPro', 'Cinzel', serif;
+    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+}
+.ol-section-sub {
+    font-family: 'SwitzerlandCondensed', sans-serif;
+    font-size: 0.72rem;
+    margin: 0.15rem 0 0 0;
+    opacity: 0.65;
+}
+
+/* Badge de nível Prime */
+.ol-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
     .main .block-container {
@@ -252,7 +294,7 @@ def setup() -> bool:
     st.sidebar.divider()
 
     dark = st.sidebar.toggle(
-        "🌙 Tema Escuro",
+        "Tema Escuro",
         key="dark_mode",
         value=st.session_state.get("dark_mode", True),
     )

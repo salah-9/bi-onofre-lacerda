@@ -22,7 +22,7 @@ SPREADSHEET_ID = "1yPE_XlMWbk1di6xK2bD68w5IbZkVi2JqILC0bXwEykc"
 
 st.set_page_config(
     page_title="Relatório de Campanhas",
-    page_icon="📊",
+    page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -206,7 +206,7 @@ taxa_conv      = n_convertido / total * 100 if total else 0
 
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Total de Oportunidades", f"{total:,}")
-k2.metric("Leads Quentes 🔴",       f"{n_quente:,}")
+k2.metric("Leads Quentes",          f"{n_quente:,}")
 k3.metric("Descartados",            f"{n_descartados:,}")
 k4.metric("Taxa de Conversão",      f"{taxa_conv:.1f}%")
 

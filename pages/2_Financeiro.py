@@ -39,11 +39,11 @@ NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime", "Prime Inicial"]
 ORDEM_PRIME = {n: i for i, n in enumerate(NIVEIS_ORDEM)}
 
 BADGE_PRIME = {
-    "Prime +3":      "🥇 Prime +3",
-    "Prime +2":      "🟢 Prime +2",
-    "Prime +1":      "🟢 Prime +1",
-    "Prime":         "🟢 Prime",
-    "Prime Inicial": "⚪ Prime Inicial",
+    "Prime +3":      "Prime +3",
+    "Prime +2":      "Prime +2",
+    "Prime +1":      "Prime +1",
+    "Prime":         "Prime",
+    "Prime Inicial": "Prime Inicial",
 }
 
 COR_POR_NIVEL = {
@@ -278,11 +278,12 @@ resultados_todos = agregar_corretores(df_fil, prime_herdado_set)
 # ══════════════════════════════════════════════════════════════════════════════
 # SEÇÃO 1 — GESTÃO
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown(
-    "<h2 style='margin-top:1.5rem; margin-bottom:0;'>📊 Gestão</h2>"
-    "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Visão interna — não compartilhar com corretores</p>",
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<div class='ol-section'>
+  <p class='ol-section-title' style='color:#184D6C;'>Gestão</p>
+  <p class='ol-section-sub' style='color:#184D6C;'>Visão interna — não compartilhar com corretores</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ── KPIs — Volume ─────────────────────────────────────────────────────────────
 total_vendas   = len(df_vendas_fil)
@@ -325,8 +326,8 @@ k9.metric(
 k10.metric("R$ Líquido Imobiliária",   fmt_brl(liquido if total_agencia > 0 else None))
 
 k11, k12, *_ = st.columns(5)
-k11.metric("Corretores Prime 🟢",         n_prime)
-k12.metric("Corretores Prime Inicial ⚪", n_base)
+k11.metric("Corretores Prime",         n_prime)
+k12.metric("Prime Inicial",            n_base)
 
 st.divider()
 
@@ -473,11 +474,12 @@ with col_cap_rank:
 # ══════════════════════════════════════════════════════════════════════════════
 # SEÇÃO 2 — CORRETORES
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown(
-    "<h2 style='margin-top:2rem; margin-bottom:0;'>👤 Corretores</h2>"
-    "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Desempenho individual por período</p>",
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<div class='ol-section'>
+  <p class='ol-section-title' style='color:#184D6C;'>Corretores</p>
+  <p class='ol-section-sub' style='color:#184D6C;'>Desempenho individual por período</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Filtro de corretor específico (só afeta esta seção)
 corretores_disp = sorted(df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
@@ -511,21 +513,26 @@ for nivel in NIVEIS_ORDEM:
     if not grupo:
         continue
 
+    nivel_cor   = COR_POR_NIVEL.get(nivel, COR_BASE)
     badge_label = BADGE_PRIME.get(nivel, nivel)
-    st.markdown(f"**{badge_label}**")
+    st.markdown(
+        f"<span style='display:inline-block;width:8px;height:8px;border-radius:50%;"
+        f"background:{nivel_cor};margin-right:7px;vertical-align:middle;'></span>"
+        f"<strong style='font-family:TrajanPro,serif;letter-spacing:.07em;"
+        f"font-size:.78rem;text-transform:uppercase;color:{nivel_cor};'>{badge_label}</strong>",
+        unsafe_allow_html=True,
+    )
 
     for r in grupo:
-        corretor = r["corretor"]
-        label    = badge_label
-        if r["is_prime_herdado"] and nivel != "Prime Inicial":
-            label += " (H)"
+        corretor       = r["corretor"]
+        herdado_suffix = " — Herdado" if r["is_prime_herdado"] and nivel != "Prime Inicial" else ""
 
         with st.container(border=True):
             col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
 
             with col_nome:
                 st.markdown(f"**{corretor}**")
-                st.caption(label)
+                st.caption(f"{badge_label}{herdado_suffix}")
 
             col_vendas.metric("Vendas",   r["num_vendas"])
             col_loc.metric("Locações",    r["num_locacoes"])

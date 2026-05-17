@@ -97,7 +97,7 @@ def mes_label(dt):
     return f"{meses[dt.month-1]}/{dt.year}"
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["📊  Comercial", "💰  Financeiro", "🏢  Institucional"])
+tab1, tab2, tab3 = st.tabs(["Comercial", "Financeiro", "Institucional"])
 
 # ─────────────────────────────────────────────────────────────────
 # COMERCIAL
@@ -620,11 +620,11 @@ FIN_COR_AZUL          = "#1E6FE8"
 FIN_ORDEM_PRIME = {"Prime +3": 0, "Prime +2": 1, "Prime +1": 2, "Prime": 3, "Prime Inicial": 4}
 
 FIN_BADGE_PRIME = {
-    "Prime +3":      "🥇 Prime +3",
-    "Prime +2":      "🟢 Prime +2",
-    "Prime +1":      "🟢 Prime +1",
-    "Prime":         "🟢 Prime",
-    "Prime Inicial": "⚪ Prime Inicial",
+    "Prime +3":      "Prime +3",
+    "Prime +2":      "Prime +2",
+    "Prime +1":      "Prime +1",
+    "Prime":         "Prime",
+    "Prime Inicial": "Prime Inicial",
 }
 
 FIN_COR_POR_NIVEL = {
@@ -856,8 +856,10 @@ with tab2:
     # SEÇÃO 1 — GESTÃO
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown(
-        "<h2 style='margin-top:1.5rem; margin-bottom:0;'>📊 Gestão</h2>"
-        "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Visão interna — não compartilhar com corretores</p>",
+        "<div class='ol-section'>"
+        "<p class='ol-section-title' style='color:#184D6C;'>Gestão</p>"
+        "<p class='ol-section-sub' style='color:#184D6C;'>Visão interna — não compartilhar com corretores</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
 
@@ -896,8 +898,8 @@ with tab2:
     k10.metric("R$ Líquido Imob.",     fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
 
     k11, k12, *_ = st.columns(5)
-    k11.metric("Corretores Prime 🟢",         fin_n_prime)
-    k12.metric("Corretores Prime Inicial ⚪", fin_n_base)
+    k11.metric("Corretores Prime",    fin_n_prime)
+    k12.metric("Prime Inicial",       fin_n_base)
 
     st.divider()
 
@@ -1011,8 +1013,10 @@ with tab2:
     # SEÇÃO 2 — CORRETORES
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown(
-        "<h2 style='margin-top:2rem; margin-bottom:0;'>👤 Corretores</h2>"
-        "<p style='color:#6B7280; margin-top:0; margin-bottom:1rem;'>Desempenho individual por período</p>",
+        "<div class='ol-section'>"
+        "<p class='ol-section-title' style='color:#184D6C;'>Corretores</p>"
+        "<p class='ol-section-sub' style='color:#184D6C;'>Desempenho individual por período</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
 
@@ -1046,19 +1050,24 @@ with tab2:
         if not grupo:
             continue
 
+        fin_nivel_cor   = FIN_COR_POR_NIVEL.get(nivel, FIN_COR_BASE)
         fin_badge_label = FIN_BADGE_PRIME.get(nivel, nivel)
-        st.markdown(f"**{fin_badge_label}**")
+        st.markdown(
+            f"<span style='display:inline-block;width:8px;height:8px;border-radius:50%;"
+            f"background:{fin_nivel_cor};margin-right:7px;vertical-align:middle;'></span>"
+            f"<strong style='font-family:TrajanPro,serif;letter-spacing:.07em;"
+            f"font-size:.78rem;text-transform:uppercase;color:{fin_nivel_cor};'>{fin_badge_label}</strong>",
+            unsafe_allow_html=True,
+        )
 
         for r in grupo:
-            label = fin_badge_label
-            if r["is_prime_herdado"] and nivel != "Prime Inicial":
-                label += " (H)"
+            herdado_suffix = " — Herdado" if r["is_prime_herdado"] and nivel != "Prime Inicial" else ""
 
             with st.container(border=True):
                 col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
                 with col_nome:
                     st.markdown(f"**{r['corretor']}**")
-                    st.caption(label)
+                    st.caption(f"{fin_badge_label}{herdado_suffix}")
                 col_vendas.metric("Vendas",   r["num_vendas"])
                 col_loc.metric("Locações",    r["num_locacoes"])
                 col_vgv.metric("VGV",         fin_fmt_brl(r["vgv"]))
@@ -1208,7 +1217,7 @@ with tab3:
     
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Total de Oportunidades", f"{total:,}")
-    k2.metric("Leads Quentes 🔴",       f"{n_quente:,}")
+    k2.metric("Leads Quentes",           f"{n_quente:,}")
     k3.metric("Descartados",            f"{n_descartados:,}")
     k4.metric("Taxa de Conversão",      f"{taxa_conv:.1f}%")
     
