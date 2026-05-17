@@ -97,6 +97,15 @@ def fmt_pct(v, decimals=1) -> str:
     return f"{float(v):.{decimals}f}%"
 
 
+def _normalizar_tipo(val: str) -> str:
+    s = val.lower().strip()
+    if any(k in s for k in ("novo", "lança", "lanca", "planta", "constru")):
+        return "Novo"
+    if any(k in s for k in ("usado", "revendas", "revenda", "segunda")):
+        return "Usado"
+    return val.title() if val else ""
+
+
 @st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
 def carregar_dados():
     sh = _gsheets.get_spreadsheet()
@@ -130,7 +139,7 @@ def carregar_dados():
         vgv_acum       = parse_brl(row.get("VGV Acumulado", ""))
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
-        tipo_imovel    = str(row.get("Tipo", "")).strip()
+        tipo_imovel    = _normalizar_tipo(str(row.get("Tipo", "")).strip())
 
         mes_raw = str(row.get("MES", "")).strip()
         try:
