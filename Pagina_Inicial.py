@@ -15,50 +15,175 @@ sys.path.insert(0, str(Path(__file__).parent))
 import _auth
 import _gsheets
 
+import base64 as _base64
+
 st.set_page_config(
-    page_title="BI Onofre Lacerda",
-    page_icon="🏠",
+    page_title="Onofre Lacerda — BI",
+    page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-NAVY = "#062b41"
-GOLD = "#cfaa52"
+AZUL      = "#184D6C"
+CREME     = "#FFFBD6"
+AZUL_DARK = "#0d1e2d"
+AZUL_CARD = "#163d55"
 
-st.markdown("""
+# ── Fontes via base64 ─────────────────────────────────────────────────────────
+def _b64f(path):
+    try:
+        return _base64.b64encode(Path(path).read_bytes()).decode()
+    except Exception:
+        return ""
+
+_ROOT = Path(__file__).parent
+_ff = lambda n, b, fmt, w: (
+    f"@font-face{{font-family:'{n}';src:url('data:font/{fmt};base64,{b}') "
+    f"format('{fmt}');font-weight:{w};font-display:swap;}}" if b else ""
+)
+_font_css = (
+    _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Regular.ttf"), "truetype", 400) +
+    _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Bold.otf"),    "opentype", 700) +
+    _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Plain.ttf"), "truetype", 400) +
+    _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Bold.ttf"),  "truetype", 700)
+)
+
+st.markdown(f"<style>{_font_css}</style>", unsafe_allow_html=True)
+
+# ── CSS principal ─────────────────────────────────────────────────────────────
+st.markdown(f"""
 <style>
-[data-testid="stToolbar"] { display: none !important; }
-header[data-testid="stHeader"] { display: none !important; }
-section[data-testid="stSidebar"] { display: none !important; }
-[data-testid="stMetricValue"] { font-size: 1rem !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; font-weight: 700; }
-[data-testid="stMetricLabel"] { font-size: 0.7rem !important; }
-hr { border-color: #cfaa5244 !important; }
+[data-testid="stToolbar"] {{display:none !important;}}
+header[data-testid="stHeader"] {{display:none !important;}}
+section[data-testid="stSidebar"] {{display:none !important;}}
+
+.stApp, .main .block-container {{
+    background-color: {AZUL_DARK} !important;
+    color: {CREME} !important;
+}}
+h1 {{
+    font-family: 'TrajanPro', serif !important;
+    color: {CREME} !important;
+    letter-spacing: 0.06em !important;
+    font-size: 1.4rem !important;
+    border-bottom: 1px solid rgba(255,251,214,0.15);
+    padding-bottom: 0.4rem;
+}}
+h2, h3 {{
+    font-family: 'TrajanPro', serif !important;
+    color: {CREME} !important;
+    letter-spacing: 0.05em !important;
+}}
+p, span, label, div, small {{
+    font-family: 'SwitzCond', sans-serif !important;
+}}
+[data-testid="stMetricValue"] {{
+    color: {CREME} !important;
+    font-family: 'SwitzCond', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}}
+[data-testid="stMetricLabel"] {{
+    color: rgba(255,251,214,0.55) !important;
+    font-family: 'SwitzCond', sans-serif !important;
+    font-size: 0.64rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+}}
+[data-testid="stVerticalBlockBorderWrapper"] > div {{
+    background-color: {AZUL_CARD} !important;
+    border: 1px solid rgba(255,251,214,0.1) !important;
+    border-radius: 6px !important;
+}}
+hr {{border-color: rgba(255,251,214,0.12) !important;}}
+[data-testid="stTabs"] [role="tab"] {{
+    color: rgba(255,251,214,0.45) !important;
+    font-family: 'SwitzCond', sans-serif !important;
+    letter-spacing: 0.08em !important;
+    font-size: 0.82rem !important;
+    text-transform: uppercase !important;
+}}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {{
+    color: {CREME} !important;
+    border-bottom: 2px solid {CREME} !important;
+}}
+[data-testid="stSelectbox"] label,
+[data-testid="stMultiSelect"] label {{
+    color: rgba(255,251,214,0.65) !important;
+    font-family: 'SwitzCond', sans-serif !important;
+    font-size: 0.7rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+}}
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stMultiSelect"] > div > div {{
+    background-color: {AZUL_CARD} !important;
+    border: 1px solid rgba(255,251,214,0.18) !important;
+    color: {CREME} !important;
+}}
+.stCaption, [data-testid="stCaptionContainer"] * {{
+    color: rgba(255,251,214,0.45) !important;
+    font-family: 'SwitzCond', sans-serif !important;
+}}
+.stButton > button {{
+    background-color: {CREME} !important;
+    color: {AZUL} !important;
+    border: none !important;
+    font-family: 'SwitzCond', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    border-radius: 3px !important;
+}}
+[data-testid="stProgress"] > div > div {{
+    background-color: {CREME} !important;
+    opacity: 0.55 !important;
+}}
+.ol-section {{
+    border-left: 3px solid {CREME};
+    padding: 0.45rem 0.9rem;
+    margin: 1.8rem 0 0.8rem 0;
+    background: rgba(255,251,214,0.03);
+    border-radius: 0 4px 4px 0;
+}}
+.ol-section-title {{
+    font-family: 'TrajanPro', serif !important;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+    color: {CREME} !important;
+}}
+.ol-section-sub {{
+    font-family: 'SwitzCond', sans-serif !important;
+    font-size: 0.68rem;
+    margin: 0.08rem 0 0 0;
+    color: rgba(255,251,214,0.45) !important;
+}}
+@media (max-width: 768px) {{
+    .main .block-container {{padding: 0.75rem !important; max-width: 100% !important;}}
+    div[data-testid="stHorizontalBlock"] {{flex-wrap: wrap !important;}}
+    div[data-testid="column"] {{min-width: calc(50% - 0.5rem) !important;}}
+}}
 </style>
 """, unsafe_allow_html=True)
 
 _auth.require_login()
 
-# ── Header ────────────────────────────────────────────────────────────────────
-col_logo, _, col_dark = st.columns([3, 3, 1])
-with col_logo:
-    LOGO_URL = "https://s01.jetimgs.com/tnnAwYXphKBPiW3sr35S56TSBu41PCPMXJgG4UpLuMhmB5uKGXsEydyXaxruLCKtnCpQbjr2aUOVnZo7j6D3_ljtfB0XzBhPr4XoKoQDytNwYsrsQ1rd0CC7/logoonofreotimizadamaisdestaquepng.webp"
-    st.image(LOGO_URL, width=160)
-with col_dark:
-    dark = st.toggle("🌙", value=st.session_state.get("dark_mode", False), key="dark_mode")
-
-if dark:
-    st.markdown(f"""<style>
-    .stApp, .main .block-container {{ background-color: #0d1b2a !important; }}
-    h1, h2, h3 {{ color: {GOLD} !important; }}
-    p, span, .stMarkdown {{ color: #dde3ec !important; }}
-    [data-testid="stMetricValue"] {{ color: {GOLD} !important; }}
-    [data-testid="stVerticalBlockBorderWrapper"] > div {{ background-color: #162032 !important; border-color: #2a3a50 !important; }}
-    </style>""", unsafe_allow_html=True)
-else:
-    st.markdown(f"""<style>
-    h1, h2, h3 {{ color: {NAVY} !important; }}
-    [data-testid="stMetricValue"] {{ color: {NAVY} !important; }}
-    </style>""", unsafe_allow_html=True)
+# ── Header com logo ───────────────────────────────────────────────────────────
+_logo_path = _ROOT / "logo_onofre.png"
+if _logo_path.exists():
+    _logo_b64 = _b64f(_logo_path)
+    st.markdown(
+        f'<div style="padding:1rem 0 0.5rem 0;">'
+        f'<img src="data:image/png;base64,{_logo_b64}" '
+        f'style="height:48px;display:block;">'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 st.divider()
 
