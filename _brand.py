@@ -1,9 +1,46 @@
 """Identidade visual Onofre Lacerda — brandbook oficial."""
 
+import base64
 from pathlib import Path
 import streamlit as st
 
-LOGO = Path(__file__).parent / "logo_onofre.webp"
+LOGO      = Path(__file__).parent / "logo_onofre.webp"
+_FONT_DIR = Path(__file__).parent / "fonts"
+
+
+def _b64(path: Path) -> str:
+    try:
+        return base64.b64encode(path.read_bytes()).decode()
+    except Exception:
+        return ""
+
+
+def _font_face(name: str, b64: str, fmt: str, weight: int = 400) -> str:
+    if not b64:
+        return ""
+    return (
+        f"@font-face {{\n"
+        f"  font-family: '{name}';\n"
+        f"  src: url('data:font/{fmt};base64,{b64}') format('{fmt}');\n"
+        f"  font-weight: {weight};\n"
+        f"  font-display: swap;\n"
+        f"}}\n"
+    )
+
+
+def _build_font_css() -> str:
+    trajan_reg  = _b64(_FONT_DIR / "trajan"      / "TrajanPro-Regular.ttf")
+    trajan_bold = _b64(_FONT_DIR / "trajan"      / "TrajanPro-Bold.otf")
+    swiss_plain = _b64(_FONT_DIR / "switzerland" / "Switzerland_Condensed_Plain.ttf")
+    swiss_bold  = _b64(_FONT_DIR / "switzerland" / "Switzerland_Condensed_Bold.ttf")
+
+    css = "<style>\n"
+    css += _font_face("TrajanPro", trajan_reg,  "truetype", 400)
+    css += _font_face("TrajanPro", trajan_bold, "opentype", 700)
+    css += _font_face("SwitzerlandCondensed", swiss_plain, "truetype", 400)
+    css += _font_face("SwitzerlandCondensed", swiss_bold,  "truetype", 700)
+    css += "</style>"
+    return css
 
 # Cores oficiais do brandbook
 AZUL       = "#184D6C"   # tradição — primária
@@ -15,7 +52,7 @@ AZUL_MID   = "#1a5f84"   # hover / gradiente
 
 _BASE = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Barlow+Condensed:wght@300;400;500;600&display=swap');
+/* Fontes carregadas via base64 — sem dependência externa */
 
 [data-testid="stToolbar"] { display: none !important; }
 
@@ -30,7 +67,7 @@ section[data-testid="stSidebar"] hr { border-color: rgba(255,251,214,0.2) !impor
 [data-testid="stSidebarNavLink"] {
     color: #FFFBD6 !important;
     border-radius: 4px;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     letter-spacing: 0.04em;
 }
 [data-testid="stSidebarNavLink"]:hover,
@@ -64,14 +101,14 @@ _LIGHT = f"""
 
 h1, h2, h3 {{
     color: {AZUL} !important;
-    font-family: 'Cinzel', serif !important;
+    font-family: 'TrajanPro', 'Cinzel', serif !important;
     letter-spacing: 0.04em;
 }}
-p, span, label, div {{ font-family: 'Barlow Condensed', sans-serif !important; }}
+p, span, label, div {{ font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important; }}
 
 [data-testid="stMetricValue"] {{
     color: {AZUL} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 600;
     font-size: 1.15rem !important;
     white-space: nowrap !important;
@@ -81,7 +118,7 @@ p, span, label, div {{ font-family: 'Barlow Condensed', sans-serif !important; }
 [data-testid="stMetricLabel"] {{
     color: #5a7080 !important;
     font-size: 0.68rem !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }}
@@ -98,7 +135,7 @@ hr {{ border-color: {AZUL}22 !important; }}
 .stButton > button {{
     background-color: {AZUL} !important;
     color: {CREME} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 600;
     letter-spacing: 0.06em;
     border: none !important;
@@ -111,7 +148,7 @@ hr {{ border-color: {AZUL}22 !important; }}
 [data-testid="stSelectbox"] label,
 [data-testid="stMultiSelect"] label {{
     color: {AZUL} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 600;
     letter-spacing: 0.04em;
 }}
@@ -125,17 +162,17 @@ _DARK = f"""
 
 h1, h2, h3 {{
     color: {CREME} !important;
-    font-family: 'Cinzel', serif !important;
+    font-family: 'TrajanPro', 'Cinzel', serif !important;
     letter-spacing: 0.04em;
 }}
 p, span, label, div, .stMarkdown {{
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     color: #d4e4ef !important;
 }}
 
 [data-testid="stMetricValue"] {{
     color: {CREME} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 600;
     font-size: 1.15rem !important;
     white-space: nowrap !important;
@@ -145,7 +182,7 @@ p, span, label, div, .stMarkdown {{
 [data-testid="stMetricLabel"] {{
     color: #7aaabb !important;
     font-size: 0.68rem !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }}
@@ -161,7 +198,7 @@ hr {{ border-color: rgba(255,251,214,0.15) !important; }}
 .stButton > button {{
     background-color: {CREME} !important;
     color: {AZUL} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 700;
     letter-spacing: 0.06em;
     border: none !important;
@@ -184,14 +221,14 @@ hr {{ border-color: rgba(255,251,214,0.15) !important; }}
 [data-testid="stSelectbox"] label,
 [data-testid="stMultiSelect"] label {{
     color: {CREME} !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     font-weight: 500;
     letter-spacing: 0.04em;
 }}
 
 /* Tabs */
 [data-testid="stTabs"] [role="tab"] {{
-    font-family: 'Barlow Condensed', sans-serif !important;
+    font-family: 'SwitzerlandCondensed', 'Barlow Condensed', sans-serif !important;
     letter-spacing: 0.06em;
     color: #9ab5c8 !important;
 }}
@@ -222,6 +259,7 @@ def setup() -> bool:
 
     st.sidebar.divider()
 
+    st.markdown(_build_font_css(), unsafe_allow_html=True)
     st.markdown(_BASE, unsafe_allow_html=True)
     st.markdown(_DARK if dark else _LIGHT, unsafe_allow_html=True)
     return dark
