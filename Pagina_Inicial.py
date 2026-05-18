@@ -344,7 +344,6 @@ with tab1:
     
     # ── Interface ────────────────────────────────────────────────────────────────
     st.title("Dashboard Comercial")
-    st.caption("Funil de vendas · SLA de atendimento · Ranking de corretores")
     
     leads, ganhas = com_carregar_dados()
     
@@ -519,7 +518,6 @@ with tab1:
     
     with col_sla:
         st.subheader("SLA — 1º Contato por Corretor")
-        st.caption(f"Tempo médio do lead gerado ao 1º contato  |  Geral: {fmt_sla(sla_medio)}")
     
         sla_rank = (
             leads_f[leads_f["sla_horas"].notna() & leads_f["initial_owner"].notna()]
@@ -549,7 +547,6 @@ with tab1:
     
     with col_acao:
         st.subheader("Tempo Médio — 1ª Ação por Corretor")
-        st.caption(f"Tempo até a primeira movimentação no funil  |  Geral: {fmt_sla(acao_medio)}")
     
         if "acao_horas" in leads_f.columns:
             acao_rank = (
@@ -587,7 +584,6 @@ with tab1:
     
     with col_rank:
         st.subheader("Ranking de Fechamentos")
-        st.caption("VGV acumulado por corretor (locações excluídas)")
     
         if not ganhas_f.empty:
             rank = (
@@ -613,7 +609,6 @@ with tab1:
     
     with col_ticket:
         st.subheader("Ticket Médio por Corretor")
-        st.caption("Valor médio dos imóveis negociados — identifica foco em alto padrão vs. volume")
     
         if not ganhas_f.empty and "corretor" in ganhas_f.columns:
             ticket_rank = (
@@ -645,7 +640,6 @@ with tab1:
     
     with col_ciclo:
         st.subheader("Ciclo Médio de Venda por Corretor")
-        st.caption(f"Dias entre geração do lead e fechamento  |  Geral: {fmt_dias(ciclo_medio)}")
     
         if "ciclo_dias" in leads_f.columns and "final_owner" in leads_f.columns:
             ciclo_rank = (
@@ -677,7 +671,6 @@ with tab1:
     
     with col_perda:
         st.subheader("Distribuição de Motivos de Perda")
-        st.caption("Por que os negócios não fecham")
     
         if "loss_reason" in leads_f.columns:
             motivos = (
@@ -734,7 +727,6 @@ with tab1:
             )
             st.plotly_chart(fig_fonte, use_container_width=True)
     
-    st.caption("Dados atualizados a cada 5 min  ·  Planilha: Cópia de OL LEADS GERAIS dash 2")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -940,7 +932,6 @@ FIN_NIVEIS_ORDEM = ["Prime +3", "Prime +2", "Prime +1", "Prime", "Prime Inicial"
 with tab2:
 
     st.title("Dashboard Financeiro")
-    st.caption("Visão de gestão e desempenho dos corretores")
 
     fin_df, fin_prime_herdado_set = fin_carregar_dados()
 
@@ -991,7 +982,6 @@ with tab2:
     st.markdown(
         "<div class='ol-section'>"
         "<p class='ol-section-title' style='color:#184D6C;'>Gestão</p>"
-        "<p class='ol-section-sub' style='color:#184D6C;'>Visão interna — não compartilhar com corretores</p>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1062,7 +1052,6 @@ with tab2:
 
     with col_vgv_rank:
         st.subheader("Ranking VGV por Corretor")
-        st.caption("Ordem decrescente · locações excluídas")
         fin_vgv_data = sorted(
             [(r["corretor"], float(r["vgv"] or 0), r["nivel"]) for r in fin_resultados_todos],
             key=lambda x: x[1], reverse=True,
@@ -1110,7 +1099,6 @@ with tab2:
 
     with col_cap_rank:
         st.subheader("Ranking de Captadores")
-        st.caption("Corretores captadores e construtoras parceiras")
         fin_df_cap = fin_df_vendas_fil[
             fin_df_vendas_fil["captador"].notna() &
             (fin_df_vendas_fil["captador"] != "")
@@ -1200,7 +1188,6 @@ with tab2:
                 col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
                 with col_nome:
                     st.markdown(f"**{r['corretor']}**")
-                    st.caption(f"{fin_badge_label}{herdado_suffix}")
                 col_vendas.metric("Vendas",   r["num_vendas"])
                 col_loc.metric("Locações",    r["num_locacoes"])
                 col_vgv.metric("VGV",         fin_fmt_brl(r["vgv"]))
@@ -1219,7 +1206,6 @@ with tab2:
 
         st.markdown("")
 
-    st.caption("Dados atualizados a cada 5 min · Fonte: OP GANHAS + PRIME HERDADO")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -1287,7 +1273,6 @@ with tab3:
     
     # ── Interface ────────────────────────────────────────────────────────────────
     st.title("Relatório de Campanhas")
-    st.caption("Volume de oportunidades · Qualificação de leads · Evolução por período")
     
     df = ins_carregar_dados()
     
@@ -1361,7 +1346,6 @@ with tab3:
     
     with col_term:
         st.subheader("Qualificação dos Leads")
-        st.caption("Quente: em atendimento ou convertido  |  Descartados: leads perdidos")
     
         fig_termo = go.Figure(go.Pie(
             labels=["Quente", "Descartados"],
@@ -1380,7 +1364,6 @@ with tab3:
     
     with col_camp:
         st.subheader("Volume de Oportunidades por Campanha")
-        st.caption("Top 10 campanhas com mais leads gerados")
     
         if "source" in df_f.columns:
             camp_vol = (
@@ -1416,7 +1399,6 @@ with tab3:
     
     # ── Qualificação por campanha (stacked) ───────────────────────────────────────
     st.subheader("Qualificação por Campanha")
-    st.caption("Distribuição de Quentes e Descartados por campanha")
     
     if "source" in df_f.columns:
         camp_qual = (
@@ -1531,4 +1513,3 @@ with tab3:
             with col_tipo:
                 st.plotly_chart(fig_tipo, use_container_width=True)
     
-    st.caption("Dados atualizados a cada 5 min  ·  Relatório restrito: sem dados financeiros ou de equipe interna")
