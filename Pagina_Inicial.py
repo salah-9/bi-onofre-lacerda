@@ -174,14 +174,22 @@ hr {{border-color: rgba(255,251,214,0.12) !important;}}
 _auth.require_login()
 
 # ── Header com logo ───────────────────────────────────────────────────────────
-_logo_path = _ROOT / "logo_onofre.png"
+_logo_path = _ROOT / "marca_horizontal_crop.png"
 if _logo_path.exists():
     _logo_b64 = _b64f(_logo_path)
     st.markdown(
-        f'<div style="padding:1rem 0 0.5rem 0;">'
+        f'<div style="text-align:center;padding:2.5rem 0 1.5rem 0;">'
+        f'<div style="'
+        f'display:inline-block;'
+        f'background:#ffffff;'
+        f'border-radius:16px;'
+        f'box-shadow:'
+        f'0 20px 60px rgba(0,0,0,0.5),'
+        f'0 6px 20px rgba(0,0,0,0.3);'
+        f'padding:1.8rem 3.5rem;">'
         f'<img src="data:image/png;base64,{_logo_b64}" '
-        f'style="height:48px;display:block;">'
-        f'</div>',
+        f'style="height:90px;display:block;">'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
