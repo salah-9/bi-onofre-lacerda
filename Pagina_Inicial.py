@@ -24,12 +24,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Auth antes de qualquer carregamento pesado
+_auth.require_login()
+
 AZUL      = "#184D6C"
 CREME     = "#FFFBD6"
 AZUL_DARK = "#0d1e2d"
 AZUL_CARD = "#163d55"
 
-# ── Fontes via base64 ─────────────────────────────────────────────────────────
+# ── Fontes via base64 (cacheado — lê arquivos só uma vez) ─────────────────────
 def _b64f(path):
     try:
         return _base64.b64encode(Path(path).read_bytes()).decode()
@@ -41,14 +44,17 @@ _ff = lambda n, b, fmt, w: (
     f"@font-face{{font-family:'{n}';src:url('data:font/{fmt};base64,{b}') "
     f"format('{fmt}');font-weight:{w};font-display:swap;}}" if b else ""
 )
-_font_css = (
-    _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Regular.ttf"), "truetype", 400) +
-    _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Bold.otf"),    "opentype", 700) +
-    _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Plain.ttf"), "truetype", 400) +
-    _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Bold.ttf"),  "truetype", 700)
-)
 
-st.markdown(f"<style>{_font_css}</style>", unsafe_allow_html=True)
+@st.cache_resource
+def _carregar_font_css():
+    return (
+        _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Regular.ttf"), "truetype", 400) +
+        _ff("TrajanPro", _b64f(_ROOT/"fonts/trajan/TrajanPro-Bold.otf"),    "opentype", 700) +
+        _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Plain.ttf"), "truetype", 400) +
+        _ff("SwitzCond", _b64f(_ROOT/"fonts/switzerland/Switzerland_Condensed_Bold.ttf"),  "truetype", 700)
+    )
+
+st.markdown(f"<style>{_carregar_font_css()}</style>", unsafe_allow_html=True)
 
 # ── CSS principal ─────────────────────────────────────────────────────────────
 st.markdown(f"""
@@ -171,8 +177,6 @@ hr {{border-color: rgba(255,251,214,0.12) !important;}}
 </style>
 """, unsafe_allow_html=True)
 
-_auth.require_login()
-
 # ── Header com logo ───────────────────────────────────────────────────────────
 _logo_path = _ROOT / "marca_horizontal_crop.png"
 if _logo_path.exists():
@@ -241,7 +245,7 @@ COR_AMARELO   = '#F59E0B'
 COR_VERMELHO  = '#EF4444'
 COR_CINZA     = '#6B7280'
 
-@st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
+@st.cache_data(ttl=300, show_spinner=False)
 def com_carregar_dados():
     sh = _gsheets.get_spreadsheet()
 
@@ -811,7 +815,7 @@ def fin_classificar_nivel(num_vendas: int, atingiu_prime: bool) -> str:
         return "Prime +3"
 
 
-@st.cache_data(ttl=300, show_spinner="Carregando dados da planilha...")
+@st.cache_data(ttl=300, show_spinner=False)
 def fin_carregar_dados():
     sh = _gsheets.get_spreadsheet()
 
@@ -1220,7 +1224,7 @@ def qualificar(row) -> str:
     return "Quente"
 
 
-@st.cache_data(ttl=300, show_spinner="Carregando dados...")
+@st.cache_data(ttl=300, show_spinner=False)
 def ins_carregar_dados():
     sh = _gsheets.get_spreadsheet()
     raw = sh.worksheet("LeadsConsolidados").get_all_records()

@@ -9,6 +9,7 @@ TOKEN_DIR     = ROOT / ".auth"
 SPREADSHEET_ID = "1yPE_XlMWbk1di6xK2bD68w5IbZkVi2JqILC0bXwEykc"
 
 
+@st.cache_resource
 def get_client():
     import gspread
     from google.oauth2.credentials import Credentials
@@ -34,5 +35,6 @@ def get_client():
     )
 
 
+@st.cache_resource
 def get_spreadsheet():
     return get_client().open_by_key(SPREADSHEET_ID)
