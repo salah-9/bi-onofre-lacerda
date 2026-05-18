@@ -40,13 +40,11 @@ def _verify_token(value: str) -> str | None:
     return None
 
 
-@st.cache_resource
-def _get_cookie_controller():
-    return CookieController()
+_cookie_ctrl = CookieController()
 
 
 def _cookies():
-    return _get_cookie_controller()
+    return _cookie_ctrl
 
 
 def is_authenticated() -> bool:
