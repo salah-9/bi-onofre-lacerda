@@ -32,9 +32,13 @@ def get_client():
         from google.oauth2.credentials import Credentials as OAuthCreds
         from google.auth.transport.requests import Request
         s = st.secrets["oauth_token"]
+        # suporte a token dividido em duas partes para evitar quebra de linha no editor
+        rt = s["refresh_token"]
+        if "refresh_token_2" in s:
+            rt = rt + s["refresh_token_2"]
         creds = OAuthCreds(
             token=None,
-            refresh_token=s["refresh_token"],
+            refresh_token=rt,
             token_uri=s["token_uri"],
             client_id=s["client_id"],
             client_secret=s["client_secret"],
