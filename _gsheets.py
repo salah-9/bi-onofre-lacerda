@@ -32,15 +32,19 @@ def get_client():
         from google.oauth2.credentials import Credentials as OAuthCreds
         from google.auth.transport.requests import Request
         s = st.secrets["oauth_token"]
-        # suporte a token dividido em duas partes para evitar quebra de linha no editor
-        rt = s["refresh_token"]
-        if "refresh_token_2" in s:
-            rt = rt + s["refresh_token_2"]
+        # valores divididos em partes para contornar quebra de linha do editor
+        def _join(key):
+            parts = [s[key]]
+            for i in range(2, 6):
+                k = f"{key}_{i}"
+                if k in s:
+                    parts.append(s[k])
+            return "".join(parts)
         creds = OAuthCreds(
             token=None,
-            refresh_token=rt,
+            refresh_token=_join("refresh_token"),
             token_uri=s["token_uri"],
-            client_id=s["client_id"],
+            client_id=_join("client_id"),
             client_secret=s["client_secret"],
             scopes=SCOPES,
         )
