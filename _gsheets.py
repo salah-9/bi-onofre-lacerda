@@ -1,4 +1,4 @@
-"""Autenticação Google Sheets — suporta OAuth local e OAuth via Secrets na nuvem."""
+"""Autenticação Google Sheets — Service Account (nuvem) ou OAuth (local)."""
 
 from pathlib import Path
 import streamlit as st
@@ -8,27 +8,42 @@ CLIENT_SECRET = ROOT / "client_secret.json"
 TOKEN_DIR     = ROOT / ".auth"
 SPREADSHEET_ID = "1yPE_XlMWbk1di6xK2bD68w5IbZkVi2JqILC0bXwEykc"
 
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+]
+
 
 @st.cache_resource
 def get_client():
     import gspread
-    from google.oauth2.credentials import Credentials
-    from google.auth.transport.requests import Request
 
+    # Service account via Streamlit secrets (produção — nunca expira)
+    if "gcp_service_account" in st.secrets:
+        from google.oauth2.service_account import Credentials
+        creds = Credentials.from_service_account_info(
+            dict(st.secrets["gcp_service_account"]),
+            scopes=SCOPES,
+        )
+        return gspread.authorize(creds)
+
+    # OAuth user token via Streamlit secrets (legado — pode expirar)
     if "oauth_token" in st.secrets:
+        from google.oauth2.credentials import Credentials as OAuthCreds
+        from google.auth.transport.requests import Request
         s = st.secrets["oauth_token"]
-        creds = Credentials(
+        creds = OAuthCreds(
             token=None,
             refresh_token=s["refresh_token"],
             token_uri=s["token_uri"],
             client_id=s["client_id"],
             client_secret=s["client_secret"],
-            scopes=["https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive"],
+            scopes=SCOPES,
         )
         creds.refresh(Request())
         return gspread.authorize(creds)
 
+    # OAuth local (desenvolvimento)
     return gspread.oauth(
         credentials_filename=str(CLIENT_SECRET),
         authorized_user_filename=str(TOKEN_DIR / "token.json"),
