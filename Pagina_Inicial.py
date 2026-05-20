@@ -19,7 +19,7 @@ import base64 as _base64
 
 st.set_page_config(
     page_title="Onofre Lacerda — BI",
-    page_icon="🏛️",
+    page_icon="MARCA REDUÇÃO_01.png",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
