@@ -1,9 +1,7 @@
 """Dashboard Institucional — Prestação de contas para construtoras parceiras."""
 
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import plotly.express as px
@@ -14,11 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import _brand
 import _auth
 import _gsheets
-
-ROOT = Path(__file__).parent.parent
-CLIENT_SECRET = ROOT / "client_secret.json"
-TOKEN_DIR = ROOT / ".auth"
-SPREADSHEET_ID = "1yPE_XlMWbk1di6xK2bD68w5IbZkVi2JqILC0bXwEykc"
+from _utils import parse_dt, trimestre, mes_ano_str as mes_ano_label, mes_ano_key
 
 st.set_page_config(
     page_title="Relatório de Campanhas",
@@ -33,55 +27,6 @@ COR_FRIO      = "#3B82F6"
 COR_LIXO      = "#9CA3AF"
 COR_VERDE     = "#22C55E"
 COR_PRINCIPAL = "#1E6FE8"
-
-FORMATOS = [
-    "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y",
-    "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d",
-]
-FORMATOS_SEM_ANO = ["%d/%m %H:%M:%S", "%d/%m %H:%M", "%d/%m"]
-HOJE = datetime.today()
-
-
-def inferir_ano(dia: int, mes: int) -> int:
-    for ano in (HOJE.year, HOJE.year - 1):
-        try:
-            if datetime(ano, mes, dia) <= HOJE:
-                return ano
-        except ValueError:
-            pass
-    return HOJE.year - 1
-
-
-def parse_dt(valor) -> Optional[datetime]:
-    s = str(valor).strip()
-    if not s:
-        return None
-    for fmt in FORMATOS:
-        try:
-            return datetime.strptime(s, fmt)
-        except ValueError:
-            pass
-    for fmt in FORMATOS_SEM_ANO:
-        try:
-            dt = datetime.strptime(s, fmt)
-            return dt.replace(year=inferir_ano(dt.day, dt.month))
-        except ValueError:
-            pass
-    return None
-
-
-def trimestre(dt: datetime) -> str:
-    return f"{dt.year}-Q{(dt.month - 1) // 3 + 1}"
-
-
-def mes_ano_key(dt: datetime) -> str:
-    return dt.strftime("%Y-%m")
-
-
-def mes_ano_label(dt: datetime) -> str:
-    meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-             "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
-    return f"{meses[dt.month - 1]}/{dt.year}"
 
 
 def qualificar(row) -> str:

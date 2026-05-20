@@ -4,8 +4,9 @@ import base64
 from pathlib import Path
 import streamlit as st
 
-LOGO       = Path(__file__).parent / "logo_onofre.png"
-LOGO_LIGHT = Path(__file__).parent / "logo_onofre_light.png"
+_ASSETS    = Path(__file__).parent / "assets"
+LOGO       = _ASSETS / "logo_onofre.png"
+LOGO_LIGHT = _ASSETS / "logo_onofre_light.png"
 _FONT_DIR  = Path(__file__).parent / "fonts"
 
 AZUL      = "#184D6C"

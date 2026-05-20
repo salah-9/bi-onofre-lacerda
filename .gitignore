@@ -1,9 +1,20 @@
+# Credenciais — nunca commitar
 client_secret*.json
 .auth/
+.env
+
+# Sistema
 .DS_Store
 __pycache__/
 *.pyc
-.env
-*.webp
+*.pyo
+
+# Ambiente virtual
+.venv/
+venv/
+
+# Assets de design (não são código)
 *.pdf
 *.rtf
+*.zip
+*.webp
