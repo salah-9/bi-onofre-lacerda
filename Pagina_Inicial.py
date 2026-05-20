@@ -363,10 +363,11 @@ with tab1:
     meses_keys   = meses_ord["mes_key"].tolist()
     
     corretores_disp = sorted(
-        leads["initial_owner"].dropna().replace("", pd.NA).dropna().unique().tolist()
+        leads["initial_owner"].dropna().replace("", pd.NA).dropna().unique().tolist(),
+        key=str,
     )
     campanhas_disp = (
-        sorted(leads["source"].dropna().replace("", pd.NA).dropna().unique().tolist())
+        sorted(leads["source"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
         if "source" in leads.columns else []
     )
     
