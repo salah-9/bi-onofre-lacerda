@@ -3,6 +3,13 @@ client_secret*.json
 .auth/
 .env
 
+# Documentação interna (fica só local)
+CLAUDE.md
+
+# Dados e ferramentas de desenvolvimento
+data/
+scripts/
+
 # Sistema
 .DS_Store
 __pycache__/
