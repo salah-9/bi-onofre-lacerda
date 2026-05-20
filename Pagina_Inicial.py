@@ -19,7 +19,7 @@ import base64 as _base64
 
 st.set_page_config(
     page_title="Onofre Lacerda — BI",
-    page_icon="MARCA REDUÇÃO_01.png",
+    page_icon=str(Path(__file__).parent / "assets" / "MARCA REDUÇÃO_01.png"),
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -178,7 +178,7 @@ hr {{border-color: rgba(255,251,214,0.12) !important;}}
 """, unsafe_allow_html=True)
 
 # ── Header com logo ───────────────────────────────────────────────────────────
-_logo_path = _ROOT / "marca_horizontal_crop.png"
+_logo_path = _ROOT / "assets" / "marca_horizontal_crop.png"
 if _logo_path.exists():
     _logo_b64 = _b64f(_logo_path)
     st.markdown(
