@@ -1146,7 +1146,7 @@ with tab2:
         unsafe_allow_html=True,
     )
 
-    fin_corretores_disp = sorted(fin_df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist())
+    fin_corretores_disp = sorted(fin_df["corretor"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
     fin_corretor_sel = st.multiselect("Filtrar por corretor", fin_corretores_disp,
                                       placeholder="Todos os corretores", key="fin_corretor")
 
@@ -1293,7 +1293,7 @@ with tab3:
     meses_keys   = meses_ord["mes_key"].tolist()
     
     campanhas_disp = (
-        sorted(df["source"].dropna().replace("", pd.NA).dropna().unique().tolist())
+        sorted(df["source"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
         if "source" in df.columns else []
     )
     
