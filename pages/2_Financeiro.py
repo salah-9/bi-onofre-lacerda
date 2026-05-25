@@ -230,7 +230,6 @@ _brand.setup()
 
 st.title("Dashboard Financeiro")
 st.caption("Visão de gestão e desempenho dos corretores")
-st.info("🔧 TESTE DE DEPLOY — v2 carregada corretamente")
 
 df, prime_herdado_set = carregar_dados()
 

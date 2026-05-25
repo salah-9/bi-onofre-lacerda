@@ -870,7 +870,7 @@ def fin_carregar_dados():
         vgv_acum       = fin_parse_brl(row.get("VGV Acumulado", ""))
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
-        tipo_imovel    = fin_normalizar_tipo(str(row.get("Tipo", "")).strip())
+        tipo_imovel    = fin_normalizar_tipo(str(row.get("Tipo de Imovel", row.get("Tipo", ""))).strip())
         regiao         = str(row.get("Regiao", "")).strip().title()
 
         mes_raw = str(row.get("MES", "")).strip()
@@ -1064,28 +1064,7 @@ with tab2:
     st.divider()
 
     # ── Gráficos de gestão ────────────────────────────────────────────────────
-    col_pizza, col_vgv_rank = st.columns(2)
-
-    with col_pizza:
-        st.subheader("Tipo de Imóvel — Novo x Usado")
-        fin_tipo_counts = (
-            fin_df_vendas_fil["tipo_imovel"]
-            .replace("", pd.NA).dropna()
-            .value_counts().reset_index()
-        )
-        fin_tipo_counts.columns = ["Tipo", "Qtd"]
-
-        if not fin_tipo_counts.empty:
-            fig_pizza = go.Figure(go.Pie(
-                labels=fin_tipo_counts["Tipo"], values=fin_tipo_counts["Qtd"],
-                hole=0.45, textinfo="label+percent+value",
-                marker_colors=[FIN_COR_AZUL, FIN_COR_PRIME2, FIN_COR_PRIME3],
-            ))
-            fig_pizza.update_layout(margin=dict(l=0,r=0,t=0,b=20), height=320,
-                                    legend=dict(orientation="h", y=-0.1))
-            st.plotly_chart(fig_pizza, use_container_width=True)
-        else:
-            st.info("Sem dados de tipo de imóvel para este período.")
+    col_vgv_rank, _ = st.columns(2)
 
     with col_vgv_rank:
         st.subheader("Ranking VGV por Corretor")
@@ -1192,6 +1171,29 @@ with tab2:
             st.plotly_chart(fig_cap, use_container_width=True)
         else:
             st.info("Sem dados de captador para este período.")
+
+    # ── Novo x Usado ──────────────────────────────────────────────────────────
+    col_pizza, _ = st.columns(2)
+    with col_pizza:
+        st.subheader("Tipo de Imóvel — Novo x Usado")
+        fin_tipo_counts = (
+            fin_df_vendas_fil["tipo_imovel"]
+            .replace("", pd.NA).dropna()
+            .value_counts().reset_index()
+        )
+        fin_tipo_counts.columns = ["Tipo", "Qtd"]
+
+        if not fin_tipo_counts.empty:
+            fig_pizza = go.Figure(go.Pie(
+                labels=fin_tipo_counts["Tipo"], values=fin_tipo_counts["Qtd"],
+                hole=0.45, textinfo="label+percent+value",
+                marker_colors=[FIN_COR_AZUL, FIN_COR_PRIME2, FIN_COR_PRIME3],
+            ))
+            fig_pizza.update_layout(margin=dict(l=0,r=0,t=0,b=20), height=320,
+                                    legend=dict(orientation="h", y=-0.1))
+            st.plotly_chart(fig_pizza, use_container_width=True)
+        else:
+            st.info("Sem dados de tipo de imóvel para este período.")
 
     # ══════════════════════════════════════════════════════════════════════════
     # SEÇÃO 2 — CORRETORES
