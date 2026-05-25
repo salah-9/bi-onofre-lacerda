@@ -268,6 +268,7 @@ def com_carregar_dados():
         "Data Ganhou": "won_at",
         "Data Perdeu": "lost_at",
         "Motivo Perda": "loss_reason",
+        "Regiao": "regiao",
     }
     leads = leads.rename(columns={k: v for k, v in col_map_leads.items() if k in leads.columns})
 
@@ -319,6 +320,7 @@ def com_carregar_dados():
         "Responsavel": "corretor",
         "Valor": "valor",
         "Tipo de Negocio": "contract_type",
+        "Regiao": "regiao",
     }
     ganhas = ganhas.rename(columns={k: v for k, v in col_map_ganhas.items() if k in ganhas.columns})
 
@@ -370,12 +372,16 @@ with tab1:
         sorted(leads["source"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
         if "source" in leads.columns else []
     )
-    
-    col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 3, 3])
-    
+    regioes_disp = (
+        sorted(leads["regiao"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
+        if "regiao" in leads.columns else []
+    )
+
+    col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 3, 3])
+
     with col_f1:
         tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="com_per_odo")
-    
+
     with col_f2:
         if tipo_periodo == "Trimestre":
             trimestre_sel = st.selectbox("Trimestre", trimestres_disp, key="com_trimestre")
@@ -388,13 +394,16 @@ with tab1:
         else:
             trimestre_sel = None
             mes_sel_key = None
-    
+
     with col_f3:
-        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos", key="com_corretor")
-    
+        regiao_sel = st.multiselect("Região", regioes_disp, placeholder="Todas", key="com_regiao")
+
     with col_f4:
+        corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos", key="com_corretor")
+
+    with col_f5:
         campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas", key="com_campanha")
-    
+
     # ── Aplicar filtros ───────────────────────────────────────────────────────────
     if tipo_periodo == "Trimestre":
         leads_f  = leads[leads["trimestre"] == trimestre_sel].copy()
@@ -405,12 +414,18 @@ with tab1:
     else:
         leads_f  = leads.copy()
         ganhas_f = ganhas.copy()
-    
+
+    if regiao_sel:
+        if "regiao" in leads_f.columns:
+            leads_f = leads_f[leads_f["regiao"].isin(regiao_sel)]
+        if "regiao" in ganhas_f.columns:
+            ganhas_f = ganhas_f[ganhas_f["regiao"].isin(regiao_sel)]
+
     if corretor_sel:
         leads_f = leads_f[leads_f["initial_owner"].isin(corretor_sel)]
         if "corretor" in ganhas_f.columns:
             ganhas_f = ganhas_f[ganhas_f["corretor"].isin(corretor_sel)]
-    
+
     if campanha_sel and "source" in leads_f.columns:
         leads_f = leads_f[leads_f["source"].isin(campanha_sel)]
     
@@ -850,6 +865,7 @@ def fin_carregar_dados():
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
         tipo_imovel    = fin_normalizar_tipo(str(row.get("Tipo", "")).strip())
+        regiao         = str(row.get("Regiao", "")).strip()
 
         mes_raw = str(row.get("MES", "")).strip()
         try:
@@ -874,6 +890,7 @@ def fin_carregar_dados():
             "vgv_acumulado":  vgv_acum,
             "categoria":      categoria,
             "prime_flag":     prime_flag,
+            "regiao":         regiao,
         })
 
     return pd.DataFrame(registros), prime_herdado_set
@@ -954,7 +971,12 @@ with tab2:
     fin_meses_labels = fin_meses_ord["mes_label"].tolist()
 
     # ── Filtro de período ─────────────────────────────────────────────────────
-    col_f1, col_f2 = st.columns([2, 3])
+    fin_regioes_disp = (
+        sorted(fin_df["regiao"].dropna().replace("", pd.NA).dropna().unique().tolist(), key=str)
+        if "regiao" in fin_df.columns else []
+    )
+
+    col_f1, col_f2, col_f3 = st.columns([2, 3, 2])
     with col_f1:
         fin_tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="fin_periodo")
     with col_f2:
@@ -969,6 +991,8 @@ with tab2:
         else:
             fin_periodo_val = None
             fin_periodo_key = None
+    with col_f3:
+        fin_regiao_sel = st.multiselect("Região", fin_regioes_disp, placeholder="Todas", key="fin_regiao")
 
     if fin_tipo_periodo == "Trimestre":
         fin_df_fil = fin_df[fin_df["trimestre"] == fin_periodo_val].copy()
@@ -976,6 +1000,9 @@ with tab2:
         fin_df_fil = fin_df[fin_df["mes_key"] == fin_periodo_key].copy()
     else:
         fin_df_fil = fin_df.copy()
+
+    if fin_regiao_sel and "regiao" in fin_df_fil.columns:
+        fin_df_fil = fin_df_fil[fin_df_fil["regiao"].isin(fin_regiao_sel)]
 
     fin_df_vendas_fil = fin_df_fil[fin_df_fil["tipo"].str.lower().str.strip() == "venda"]
     fin_df_loc_fil    = fin_df_fil[fin_df_fil["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
@@ -1025,9 +1052,8 @@ with tab2:
               help="(Comissão − Corretores − Gestão) ÷ Comissão")
     k10.metric("R$ Líquido Imob.",     fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
 
-    k11, k12, *_ = st.columns(5)
-    k11.metric("Corretores Prime",    fin_n_prime)
-    k12.metric("Prime Inicial",       fin_n_base)
+    k11, *_ = st.columns(5)
+    k11.metric("Prime", fin_n_prime + fin_n_base)
 
     st.divider()
 
@@ -1082,7 +1108,7 @@ with tab2:
         else:
             st.info("Sem dados de VGV para este período.")
 
-    col_nv_rank, col_cap_rank = st.columns(2)
+    col_nv_rank, col_com_rank = st.columns(2)
 
     with col_nv_rank:
         st.subheader("Ranking — Nº de Vendas por Corretor")
@@ -1101,6 +1127,32 @@ with tab2:
                                  xaxis_title="Número de Vendas",
                                  yaxis=dict(autorange="reversed"))
             st.plotly_chart(fig_nv, use_container_width=True)
+
+    with col_com_rank:
+        st.subheader("Ranking — Comissão Gerada por Corretor")
+        st.caption("Valor total a receber por corretor no período")
+        fin_com_sorted = sorted(
+            [(r["corretor"], float(r["r_corretor"] or 0), r["nivel"]) for r in fin_resultados_todos],
+            key=lambda x: x[1], reverse=True,
+        )
+        if fin_com_sorted:
+            fig_com = go.Figure(go.Bar(
+                x=[d[1] for d in fin_com_sorted],
+                y=[d[0] for d in fin_com_sorted],
+                orientation="h",
+                text=[fin_fmt_brl(Decimal(str(d[1]))) for d in fin_com_sorted],
+                textposition="outside",
+                marker_color=[FIN_COR_POR_NIVEL.get(d[2], FIN_COR_BASE) for d in fin_com_sorted],
+            ))
+            fig_com.update_layout(margin=dict(l=0,r=100,t=10,b=0),
+                                  height=max(250, len(fin_com_sorted)*42),
+                                  xaxis_title="Comissão (R$)",
+                                  yaxis=dict(autorange="reversed"))
+            st.plotly_chart(fig_com, use_container_width=True)
+        else:
+            st.info("Sem dados de comissão para este período.")
+
+    col_cap_rank, _ = st.columns(2)
 
     with col_cap_rank:
         st.subheader("Ranking de Captadores")
