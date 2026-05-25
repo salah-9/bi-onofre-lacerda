@@ -271,6 +271,8 @@ def com_carregar_dados():
         "Regiao": "regiao",
     }
     leads = leads.rename(columns={k: v for k, v in col_map_leads.items() if k in leads.columns})
+    if "regiao" in leads.columns:
+        leads["regiao"] = leads["regiao"].astype(str).str.strip().str.title().replace("", pd.NA)
 
     for col in ["created_at", "first_action_at", "first_contact_at", "won_at", "lost_at"]:
         if col in leads.columns:
@@ -323,6 +325,8 @@ def com_carregar_dados():
         "Regiao": "regiao",
     }
     ganhas = ganhas.rename(columns={k: v for k, v in col_map_ganhas.items() if k in ganhas.columns})
+    if "regiao" in ganhas.columns:
+        ganhas["regiao"] = ganhas["regiao"].astype(str).str.strip().str.title().replace("", pd.NA)
 
     if "valor" in ganhas.columns:
         ganhas["valor"] = (
@@ -865,7 +869,7 @@ def fin_carregar_dados():
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
         tipo_imovel    = fin_normalizar_tipo(str(row.get("Tipo", "")).strip())
-        regiao         = str(row.get("Regiao", "")).strip()
+        regiao         = str(row.get("Regiao", "")).strip().title()
 
         mes_raw = str(row.get("MES", "")).strip()
         try:
