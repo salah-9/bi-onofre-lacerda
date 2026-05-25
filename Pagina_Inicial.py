@@ -1242,13 +1242,12 @@ with tab2:
             herdado_suffix = " — Herdado" if r["is_prime_herdado"] and nivel != "Prime Inicial" else ""
 
             with st.container(border=True):
-                col_nome, col_vendas, col_loc, col_vgv, col_com = st.columns([3, 1, 1, 2, 2])
+                col_nome, col_vendas, col_loc, col_vgv = st.columns([3, 1, 1, 2])
                 with col_nome:
                     st.markdown(f"**{r['corretor']}**")
                 col_vendas.metric("Vendas",   r["num_vendas"])
                 col_loc.metric("Locações",    r["num_locacoes"])
                 col_vgv.metric("VGV",         fin_fmt_brl(r["vgv"]))
-                col_com.metric("Comissão",    fin_fmt_brl(r["r_corretor"]))
 
             if nivel == "Prime Inicial":
                 vgv_f     = float(r["vgv"] or 0)
