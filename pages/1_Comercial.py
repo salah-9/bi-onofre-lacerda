@@ -52,6 +52,7 @@ def carregar_dados():
         "Data Ganhou": "won_at",
         "Data Perdeu": "lost_at",
         "Motivo Perda": "loss_reason",
+        "Regiao": "regiao",
     }
     leads = leads.rename(columns={k: v for k, v in col_map_leads.items() if k in leads.columns})
 
@@ -103,6 +104,7 @@ def carregar_dados():
         "Responsavel": "corretor",
         "Valor": "valor",
         "Tipo de Negocio": "contract_type",
+        "Regiao": "regiao",
     }
     ganhas = ganhas.rename(columns={k: v for k, v in col_map_ganhas.items() if k in ganhas.columns})
 
@@ -154,8 +156,12 @@ campanhas_disp = (
     sorted(leads["source"].dropna().replace("", pd.NA).dropna().unique().tolist())
     if "source" in leads.columns else []
 )
+regioes_disp = (
+    sorted(leads["regiao"].dropna().replace("", pd.NA).dropna().unique().tolist())
+    if "regiao" in leads.columns else []
+)
 
-col_f1, col_f2, col_f3, col_f4 = st.columns([2, 2, 3, 3])
+col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([2, 2, 2, 3, 3])
 
 with col_f1:
     tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
@@ -174,9 +180,12 @@ with col_f2:
         mes_sel_key = None
 
 with col_f3:
-    corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos")
+    regiao_sel = st.multiselect("Região", regioes_disp, placeholder="Todas")
 
 with col_f4:
+    corretor_sel = st.multiselect("Corretor", corretores_disp, placeholder="Todos")
+
+with col_f5:
     campanha_sel = st.multiselect("Campanha", campanhas_disp, placeholder="Todas")
 
 # ── Aplicar filtros ───────────────────────────────────────────────────────────
@@ -189,6 +198,12 @@ elif tipo_periodo == "Mês":
 else:
     leads_f  = leads.copy()
     ganhas_f = ganhas.copy()
+
+if regiao_sel:
+    if "regiao" in leads_f.columns:
+        leads_f = leads_f[leads_f["regiao"].isin(regiao_sel)]
+    if "regiao" in ganhas_f.columns:
+        ganhas_f = ganhas_f[ganhas_f["regiao"].isin(regiao_sel)]
 
 if corretor_sel:
     leads_f = leads_f[leads_f["initial_owner"].isin(corretor_sel)]

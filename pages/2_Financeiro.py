@@ -140,6 +140,7 @@ def carregar_dados():
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
         tipo_imovel    = _normalizar_tipo(str(row.get("Tipo", "")).strip())
+        regiao         = str(row.get("Regiao", "")).strip()
 
         mes_raw = str(row.get("MES", "")).strip()
         try:
@@ -164,6 +165,7 @@ def carregar_dados():
             "vgv_acumulado":  vgv_acum,
             "categoria":      categoria,
             "prime_flag":     prime_flag,
+            "regiao":         regiao,
         })
 
     return pd.DataFrame(registros), prime_herdado_set
@@ -245,7 +247,12 @@ meses_keys   = meses_ord["mes_key"].tolist()
 meses_labels = meses_ord["mes_label"].tolist()
 
 # ── Filtros globais de período ────────────────────────────────────────────────
-col_f1, col_f2 = st.columns([2, 3])
+regioes_disp = (
+    sorted(df["regiao"].dropna().replace("", pd.NA).dropna().unique().tolist())
+    if "regiao" in df.columns else []
+)
+
+col_f1, col_f2, col_f3 = st.columns([2, 3, 2])
 
 with col_f1:
     tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"])
@@ -262,6 +269,9 @@ with col_f2:
         periodo_val = None
         periodo_key = None
 
+with col_f3:
+    regiao_sel = st.multiselect("Região", regioes_disp, placeholder="Todas")
+
 # Aplica filtro de período
 if tipo_periodo == "Trimestre":
     df_fil = df[df["trimestre"] == periodo_val].copy()
@@ -269,6 +279,9 @@ elif tipo_periodo == "Mês":
     df_fil = df[df["mes_key"] == periodo_key].copy()
 else:
     df_fil = df.copy()
+
+if regiao_sel and "regiao" in df_fil.columns:
+    df_fil = df_fil[df_fil["regiao"].isin(regiao_sel)]
 
 df_vendas_fil = df_fil[df_fil["tipo"].str.lower().str.strip() == "venda"]
 df_loc_fil    = df_fil[df_fil["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
@@ -325,9 +338,8 @@ k9.metric(
 )
 k10.metric("R$ Líquido Imobiliária",   fmt_brl(liquido if total_agencia > 0 else None))
 
-k11, k12, *_ = st.columns(5)
-k11.metric("Corretores Prime",         n_prime)
-k12.metric("Prime Inicial",            n_base)
+k11, *_ = st.columns(5)
+k11.metric("Prime", n_prime + n_base)
 
 st.divider()
 
@@ -401,8 +413,8 @@ with col_vgv_rank:
     else:
         st.info("Sem dados de VGV para este período.")
 
-# ── Ranking nº Vendas + Ranking Captadores ────────────────────────────────────
-col_vendas_rank, col_cap_rank = st.columns(2)
+# ── Ranking nº Vendas + Ranking Comissão ─────────────────────────────────────
+col_vendas_rank, col_com_rank = st.columns(2)
 
 with col_vendas_rank:
     st.subheader("Ranking — Nº de Vendas por Corretor")
@@ -427,6 +439,40 @@ with col_vendas_rank:
             yaxis=dict(autorange="reversed"),
         )
         st.plotly_chart(fig_nv, use_container_width=True)
+
+with col_com_rank:
+    st.subheader("Ranking — Comissão Gerada por Corretor")
+    st.caption("Valor total a receber por corretor no período")
+
+    com_sorted = sorted(
+        [(r["corretor"], float(r["r_corretor"] or 0), r["nivel"]) for r in resultados_todos],
+        key=lambda x: x[1], reverse=True,
+    )
+
+    if com_sorted:
+        nomes_cm  = [d[0] for d in com_sorted]
+        vals_cm   = [d[1] for d in com_sorted]
+        cores_cm  = [COR_POR_NIVEL.get(d[2], COR_BASE) for d in com_sorted]
+        labels_cm = [fmt_brl(Decimal(str(v))) for v in vals_cm]
+
+        fig_cm = go.Figure(go.Bar(
+            x=vals_cm, y=nomes_cm,
+            orientation="h",
+            text=labels_cm, textposition="outside",
+            marker_color=cores_cm,
+        ))
+        fig_cm.update_layout(
+            margin=dict(l=0, r=100, t=10, b=0),
+            height=max(250, len(nomes_cm) * 42),
+            xaxis_title="Comissão (R$)",
+            yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(fig_cm, use_container_width=True)
+    else:
+        st.info("Sem dados de comissão para este período.")
+
+# ── Ranking Captadores ────────────────────────────────────────────────────────
+col_cap_rank, _ = st.columns(2)
 
 with col_cap_rank:
     st.subheader("Ranking de Captadores")
