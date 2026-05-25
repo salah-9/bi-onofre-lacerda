@@ -864,9 +864,7 @@ def fin_carregar_dados():
         comissao_total = fin_parse_brl(row.get("Comissao Total", ""))
         r_corretor     = fin_parse_brl(row.get("R$ Corretor", ""))
         r_captador     = fin_parse_brl(row.get("R$ Captador", ""))
-        _r_gestao1 = fin_parse_brl(row.get("R$ Dayvson", "")) or Decimal("0")
-        _r_gestao2 = fin_parse_brl(row.get("R$ Dayvson Coord", "")) or Decimal("0")
-        r_gestao   = (_r_gestao1 + _r_gestao2) or None
+        r_gestao   = fin_parse_brl(row.get("Total pago a Dayvson", ""))
         vgv_acum       = fin_parse_brl(row.get("VGV Acumulado", ""))
         categoria      = str(row.get("Categoria Venda", "")).strip()
         prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
