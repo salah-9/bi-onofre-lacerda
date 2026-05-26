@@ -980,7 +980,7 @@ with tab2:
         if "regiao" in fin_df.columns else []
     )
 
-    col_f1, col_f2, col_f3 = st.columns([2, 3, 2])
+    col_f1, col_f2, col_f3, col_f4 = st.columns([2, 3, 2, 2])
     with col_f1:
         fin_tipo_periodo = st.selectbox("Período", ["Todos", "Trimestre", "Mês"], key="fin_periodo")
     with col_f2:
@@ -997,6 +997,8 @@ with tab2:
             fin_periodo_key = None
     with col_f3:
         fin_regiao_sel = st.multiselect("Região", fin_regioes_disp, placeholder="Todas", key="fin_regiao")
+    with col_f4:
+        fin_tipo_imovel_sel = st.selectbox("Tipo de Imóvel", ["Todos", "Novo", "Usado"], key="fin_tipo_imovel")
 
     if fin_tipo_periodo == "Trimestre":
         fin_df_fil = fin_df[fin_df["trimestre"] == fin_periodo_val].copy()
@@ -1007,6 +1009,9 @@ with tab2:
 
     if fin_regiao_sel and "regiao" in fin_df_fil.columns:
         fin_df_fil = fin_df_fil[fin_df_fil["regiao"].isin(fin_regiao_sel)]
+
+    if fin_tipo_imovel_sel != "Todos" and "tipo_imovel" in fin_df_fil.columns:
+        fin_df_fil = fin_df_fil[fin_df_fil["tipo_imovel"] == fin_tipo_imovel_sel]
 
     fin_df_vendas_fil = fin_df_fil[fin_df_fil["tipo"].str.lower().str.strip() == "venda"]
     fin_df_loc_fil    = fin_df_fil[fin_df_fil["tipo"].str.lower().str.strip().str.contains("loca", na=False)]
@@ -1038,26 +1043,28 @@ with tab2:
     fin_total_agencia  = sum(float(r["comissao_agencia"] or 0) for r in fin_resultados_todos)
     fin_total_gestao   = sum(float(r["r_gestao"] or 0) for r in fin_resultados_todos)
     fin_total_corretor = sum(float(r["r_corretor"] or 0) for r in fin_resultados_todos)
+    fin_total_captacao = sum(float(v) for v in fin_df_fil["r_captador"].dropna())
     fin_n_prime        = sum(1 for r in fin_resultados_todos if r["nivel"] != "Prime Inicial")
     fin_n_base         = sum(1 for r in fin_resultados_todos if r["nivel"] == "Prime Inicial")
 
     if fin_total_agencia > 0:
-        fin_liquido     = fin_total_agencia - fin_total_corretor - fin_total_gestao
+        fin_liquido     = fin_total_agencia - fin_total_corretor - fin_total_gestao - fin_total_captacao
         fin_pct_liquido = fin_liquido / fin_total_agencia * 100
     else:
         fin_liquido     = 0.0
         fin_pct_liquido = None
 
-    k6, k7, k8, k9, k10 = st.columns(5)
+    k6, k7, k8, k9, k10, k10b = st.columns(6)
     k6.metric("Comissão Imobiliária",  fin_fmt_brl(fin_total_agencia))
     k7.metric("Total Pago Corretores", fin_fmt_brl(fin_total_corretor))
     k8.metric("Total Pago à Gestão",   fin_fmt_brl(fin_total_gestao))
-    k9.metric("% Líquido da Imob.",    fin_fmt_pct(fin_pct_liquido),
-              help="(Comissão − Corretores − Gestão) ÷ Comissão")
-    k10.metric("R$ Líquido Imob.",     fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
+    k9.metric("Total Pago à Captação", fin_fmt_brl(fin_total_captacao if fin_total_captacao > 0 else None))
+    k10.metric("% Líquido da Imob.",   fin_fmt_pct(fin_pct_liquido),
+               help="(Comissão − Corretores − Gestão − Captação) ÷ Comissão")
+    k10b.metric("R$ Líquido Imob.",    fin_fmt_brl(fin_liquido if fin_total_agencia > 0 else None))
 
     k11, *_ = st.columns(5)
-    k11.metric("Prime", fin_n_prime + fin_n_base)
+    k11.metric("Prime", fin_n_prime)
 
     st.divider()
 
