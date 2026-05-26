@@ -27,12 +27,29 @@ def get_client():
         )
         return gspread.authorize(creds)
 
+    # OAuth user token via Streamlit secrets — token.json codificado em base64
+    if "oauth_token_b64" in st.secrets:
+        import json, base64
+        from google.oauth2.credentials import Credentials as OAuthCreds
+        from google.auth.transport.requests import Request
+        raw = base64.b64decode(st.secrets["oauth_token_b64"]).decode()
+        t = json.loads(raw)
+        creds = OAuthCreds(
+            token=None,
+            refresh_token=t["refresh_token"],
+            token_uri=t["token_uri"],
+            client_id=t["client_id"],
+            client_secret=t["client_secret"],
+            scopes=t["scopes"],
+        )
+        creds.refresh(Request())
+        return gspread.authorize(creds)
+
     # OAuth user token via Streamlit secrets (legado — pode expirar)
     if "oauth_token" in st.secrets:
         from google.oauth2.credentials import Credentials as OAuthCreds
         from google.auth.transport.requests import Request
         s = st.secrets["oauth_token"]
-        # valores divididos em partes para contornar quebra de linha do editor
         def _join(key):
             parts = [s[key]]
             for i in range(2, 6):
