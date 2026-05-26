@@ -901,7 +901,20 @@ def fin_carregar_dados():
 
 
 def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dict]:
+    # Mapeamento direto da coluna Categoria Venda → nível exibido
+    _CAT_TO_NIVEL = {
+        "prime":   "Prime",
+        "prime+1": "Prime +1",
+        "prime+2": "Prime +2",
+        "prime+3": "Prime +3",
+    }
+    _CAT_ORDEM = list(_CAT_TO_NIVEL.keys())
+
+    # Normalizar nomes para lookup case-insensitive
+    prime_herdado_norm = {(n.lower(), t) for (n, t) in prime_herdado_set}
+
     resultados = []
+    corretores_vistos = set()  # nomes em lowercase
 
     for corretor in sorted(df["corretor"].unique()):
         df_c      = df[df["corretor"] == corretor]
@@ -916,14 +929,25 @@ def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dic
 
         trimestre_check = df_c["trimestre"].dropna().mode()
         trimestre_check = trimestre_check.iloc[0] if not trimestre_check.empty else ""
-        is_prime_herdado = (corretor, trimestre_check) in prime_herdado_set
+        is_prime_herdado = (corretor.lower(), trimestre_check) in prime_herdado_norm
+
+        cats_low = [str(c).strip().lower() for c in df_c["categoria"].values]
         atingiu_prime = (
-            "Prime" in df_c["categoria"].values
+            any(c in _CAT_TO_NIVEL for c in cats_low)
             or "SIM" in df_c["prime_flag"].values
             or is_prime_herdado
         )
 
-        nivel = fin_classificar_nivel(num_vendas, atingiu_prime)
+        if atingiu_prime:
+            # Usa a coluna Categoria Venda como fonte de verdade para o nível
+            prime_cats = [c for c in cats_low if c in _CAT_TO_NIVEL]
+            if prime_cats:
+                cat_max = max(prime_cats, key=lambda c: _CAT_ORDEM.index(c))
+                nivel = _CAT_TO_NIVEL[cat_max]
+            else:
+                nivel = "Prime"
+        else:
+            nivel = "Prime Inicial"
 
         r_corretor_total = df_c["r_corretor"].dropna().sum() or None
         r_gestao_total   = df_c["r_gestao"].dropna().sum() or None
@@ -933,6 +957,7 @@ def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dic
         prog_vend = min(num_vendas / VENDAS_GATILHO_PRIME, 1.0)
         progresso = max(prog_vgv, prog_vend)
 
+        corretores_vistos.add(corretor.lower())
         resultados.append({
             "corretor":         corretor,
             "nivel":            nivel,
@@ -944,6 +969,26 @@ def fin_agregar_corretores(df: pd.DataFrame, prime_herdado_set: set) -> list[dic
             "r_corretor":       r_corretor_total,
             "r_gestao":         r_gestao_total,
             "progresso":        progresso,
+        })
+
+    # Adicionar corretores com Prime Herdado que não têm vendas no período atual
+    trimestres_no_df = set(df["trimestre"].dropna().unique())
+    for (nome, trim) in prime_herdado_set:
+        if trim not in trimestres_no_df:
+            continue
+        if nome.lower() in corretores_vistos:
+            continue
+        resultados.append({
+            "corretor":         nome,
+            "nivel":            "Prime",
+            "is_prime_herdado": True,
+            "num_vendas":       0,
+            "num_locacoes":     0,
+            "vgv":              Decimal("0"),
+            "comissao_agencia": None,
+            "r_corretor":       None,
+            "r_gestao":         None,
+            "progresso":        1.0,
         })
 
     resultados.sort(key=lambda x: (
