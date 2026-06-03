@@ -13,7 +13,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).parent))
 import _auth
-import _gsheets
+import _supabase
 
 import base64 as _base64
 
@@ -247,30 +247,10 @@ COR_CINZA     = '#6B7280'
 
 @st.cache_data(ttl=300, show_spinner=False)
 def com_carregar_dados():
-    sh = _gsheets.get_spreadsheet()
-
-    leads_raw = sh.worksheet("LeadsConsolidados").get_all_records()
-    ganhas_raw = sh.worksheet("OP GANHAS").get_all_records()
+    leads_raw = _supabase.get_all_records("leads_consolidados")
+    ganhas_raw = _supabase.get_all_records("op_ganhas")
 
     leads = pd.DataFrame(leads_raw)
-    leads.columns = leads.columns.str.strip()
-
-    col_map_leads = {
-        "Id Lead": "lead_id",
-        "Data Criaçao Oportunidade": "created_at",
-        "Nome": "client_name",
-        "Responsável": "initial_owner",
-        "responsavel final": "final_owner",
-        "Tipo do contrato": "contract_type",
-        "Fonte": "source",
-        "Data Primeira Ação": "first_action_at",
-        "Data Primeiro Contato": "first_contact_at",
-        "Data Ganhou": "won_at",
-        "Data Perdeu": "lost_at",
-        "Motivo Perda": "loss_reason",
-        "Regiao": "regiao",
-    }
-    leads = leads.rename(columns={k: v for k, v in col_map_leads.items() if k in leads.columns})
     if "regiao" in leads.columns:
         leads["regiao"] = leads["regiao"].astype(str).str.strip().str.title().replace("", pd.NA)
 
@@ -314,29 +294,10 @@ def com_carregar_dados():
     leads["status"] = leads.apply(status_lead, axis=1)
 
     ganhas = pd.DataFrame(ganhas_raw)
-    ganhas.columns = ganhas.columns.str.strip()
-
-    col_map_ganhas = {
-        "ID lead": "lead_id",
-        "Data Ganhou": "won_at",
-        "Responsavel": "corretor",
-        "Valor": "valor",
-        "Tipo de Negocio": "contract_type",
-        "Regiao": "regiao",
-    }
-    ganhas = ganhas.rename(columns={k: v for k, v in col_map_ganhas.items() if k in ganhas.columns})
+    ganhas = ganhas.rename(columns={"tipo_negocio": "contract_type"})
     if "regiao" in ganhas.columns:
         ganhas["regiao"] = ganhas["regiao"].astype(str).str.strip().str.title().replace("", pd.NA)
-
-    if "valor" in ganhas.columns:
-        ganhas["valor"] = (
-            ganhas["valor"].astype(str)
-            .str.replace("R$", "", regex=False)
-            .str.replace(".", "", regex=False)
-            .str.replace(",", ".", regex=False)
-            .str.strip()
-        )
-        ganhas["valor"] = pd.to_numeric(ganhas["valor"], errors="coerce")
+    ganhas["valor"] = pd.to_numeric(ganhas["valor"], errors="coerce")
 
     if "won_at" in ganhas.columns:
         ganhas["won_at"] = ganhas["won_at"].apply(parse_dt)
@@ -837,41 +798,48 @@ def fin_classificar_nivel(num_vendas: int, atingiu_prime: bool) -> str:
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fin_carregar_dados():
-    sh = _gsheets.get_spreadsheet()
-
-    rows    = sh.worksheet("OP GANHAS").get_all_records()
-    ph_rows = sh.worksheet("PRIME HERDADO").get_all_records()
+    rows    = _supabase.get_all_records("op_ganhas")
+    ph_rows = _supabase.get_all_records("prime_herdado")
 
     prime_herdado_set = {
-        (str(r.get("Corretor Prime", "")).strip(), str(r.get("Trimestre", "")).strip())
+        (str(r.get("corretor_prime", "")).strip(), str(r.get("trimestre", "")).strip())
         for r in ph_rows
-        if r.get("Corretor Prime") and r.get("Trimestre")
+        if r.get("corretor_prime") and r.get("trimestre")
     }
 
     _MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
 
+    def _dec(val) -> Optional[Decimal]:
+        if val is None:
+            return None
+        try:
+            d = Decimal(str(val))
+            return d if d != 0 else None
+        except InvalidOperation:
+            return None
+
     registros = []
     for row in rows:
-        corretor  = str(row.get("Responsavel", "")).strip()
-        captador  = str(row.get("Captador", "")).strip() or None
-        trimestre = str(row.get("TRIMESTRE", "")).strip()
-        tipo      = str(row.get("Tipo de Negocio", "")).strip()
+        corretor  = str(row.get("corretor") or "").strip()
+        captador  = str(row.get("captador") or "").strip() or None
+        trimestre = str(row.get("trimestre") or "").strip()
+        tipo      = str(row.get("tipo_negocio") or "").strip()
 
         if not corretor or not trimestre:
             continue
 
-        valor          = fin_parse_brl(row.get("Valor ", row.get("Valor", "")))
-        comissao_total = fin_parse_brl(row.get("Comissao Total", ""))
-        r_corretor     = fin_parse_brl(row.get("R$ Corretor", ""))
-        r_captador     = fin_parse_brl(row.get("R$ Captador", ""))
-        r_gestao   = fin_parse_brl(row.get("R$ dayvson coord", ""))
-        vgv_acum       = fin_parse_brl(row.get("VGV Acumulado", ""))
-        categoria      = str(row.get("Categoria Venda", "")).strip()
-        prime_flag     = str(row.get("Prime Herdado", "")).strip().upper()
-        tipo_imovel    = fin_normalizar_tipo(str(row.get("Tipo de Imovel", row.get("Tipo", ""))).strip())
-        regiao         = str(row.get("Regiao", "")).strip().title()
+        valor          = _dec(row.get("valor"))
+        comissao_total = _dec(row.get("comissao_total"))
+        r_corretor     = _dec(row.get("r_corretor"))
+        r_captador     = _dec(row.get("r_captador"))
+        r_gestao       = _dec(row.get("r_gestao"))
+        vgv_acum       = _dec(row.get("vgv_acumulado"))
+        categoria      = str(row.get("categoria_venda") or "").strip()
+        prime_flag     = str(row.get("prime_herdado_flag") or "").strip().upper()
+        tipo_imovel    = fin_normalizar_tipo(str(row.get("tipo_imovel") or "").strip())
+        regiao         = str(row.get("regiao") or "").strip().title()
 
-        mes_raw = str(row.get("MES", "")).strip()
+        mes_raw = str(row.get("mes") or "").strip()
         try:
             ano_m, num_m = mes_raw.split("-")
             mes_label = f"{_MESES[int(num_m)-1]}/{ano_m}"
@@ -1336,23 +1304,9 @@ def qualificar(row) -> str:
 
 @st.cache_data(ttl=300, show_spinner=False)
 def ins_carregar_dados():
-    sh = _gsheets.get_spreadsheet()
-    raw = sh.worksheet("LeadsConsolidados").get_all_records()
+    raw = _supabase.get_all_records("leads_consolidados")
 
     df = pd.DataFrame(raw)
-    df.columns = df.columns.str.strip()
-
-    col_map = {
-        "Id Lead":                        "lead_id",
-        "Data Criaçao Oportunidade":      "created_at",
-        "Tipo do contrato":               "contract_type",
-        "Fonte":                          "source",
-        "Data Primeira Ação":             "first_action_at",
-        "Data Primeiro Contato":          "first_contact_at",
-        "Data Ganhou":                    "won_at",
-        "Data Perdeu":                    "lost_at",
-    }
-    df = df.rename(columns={k: v for k, v in col_map.items() if k in df.columns})
 
     for col in ["created_at", "first_action_at", "first_contact_at", "won_at", "lost_at"]:
         if col in df.columns:
